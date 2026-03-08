@@ -3,6 +3,8 @@ package com.sdu.evcharging.service.ingest;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -28,37 +30,67 @@ public class EnergyDataIngestService {
         String endStr = date.plusDays(1).atStartOfDay().format(EDS_DATE_FORMAT);
         String filterJson = "{\"PriceArea\":[\"" + zone + "\"]}";
 
-        log.info("Requesting EDS Spot Prices | Zone: {} | Start: {} | End: {}", zone, startStr, endStr);
+        log.info("Requesting DayAheadPrices | Zone: {} | Start: {} | End: {}", zone, startStr, endStr);
 
         try {
             EdsApiResponse<EdsSpotPriceRecord> response = webClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/dataset/Elspotprices")
+                            .path("/dataset/DayAheadPrices")
                             .queryParam("start", startStr)
                             .queryParam("end", endStr)
-                            // this is a variable placeholder
-                            .queryParam("filter", "{filter}") 
-                            .queryParam("sort", "HourUTC ASC")
-                            // URL-encodes the JSON and inserts it here
-                            .build(filterJson)) 
+                            .queryParam("filter", "{filter}")
+                            .queryParam("sort", "TimeUTC ASC")
+                            .build(filterJson))
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<EdsApiResponse<EdsSpotPriceRecord>>() {})
                     .block();
 
-            List<EdsSpotPriceRecord> records = (response != null && response.records() != null)
+            List<EdsSpotPriceRecord> raw = (response != null && response.records() != null)
                     ? response.records() : List.of();
 
-            System.out.println("---------------------------------------------------------");
-            System.out.println("SUCCESS! DATA RECEIVED FROM ENERGINET");
-            records.forEach(r -> System.out.println("   " + r.hourDK() + " -> " + r.spotPriceDKK() + " DKK/MWh"));
-            System.out.println("---------------------------------------------------------");
-            
-            return records;
+            log.info("Raw 15-min records from DayAheadPrices (zone={}, date={}):", zone, date);
+            raw.forEach(r -> log.info("  {} UTC -> {} DKK/MWh", r.timeUTC(), r.dayAheadPriceDKK()));
+
+            // DayAheadPrices is 15-min resolution — aggregate to hourly averages
+            List<EdsSpotPriceRecord> hourly = aggregateToHourly(raw);
+
+            log.info("Aggregated to hourly (zone={}, date={}):", zone, date);
+            hourly.forEach(r -> log.info("  {} UTC -> {} DKK/MWh (avg of 4 × 15-min)", r.timeUTC(), r.dayAheadPriceDKK()));
+
+            return hourly;
 
         } catch (Exception e) {
             log.error("EDS API Error: {}", e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Collapses 15-minute DayAheadPrices records into hourly slots by
+     * grouping on the truncated UTC hour and averaging the price.
+     */
+    private List<EdsSpotPriceRecord> aggregateToHourly(List<EdsSpotPriceRecord> raw) {
+        // Key = "YYYY-MM-DDTHH" (first 13 chars of TimeUTC)
+        Map<String, List<EdsSpotPriceRecord>> byHour = raw.stream()
+                .filter(r -> r.timeUTC() != null)
+                .collect(Collectors.groupingBy(r -> r.timeUTC().substring(0, 13)));
+
+        return byHour.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> {
+                    List<EdsSpotPriceRecord> slots = entry.getValue();
+                    double avgPriceDKK = slots.stream()
+                            .mapToDouble(r -> r.dayAheadPriceDKK() != null ? r.dayAheadPriceDKK() : 0.0)
+                            .average()
+                            .orElse(0.0);
+                    // Use the :00:00 version as the canonical hour timestamp
+                    String hourUtc = entry.getKey() + ":00:00";
+                    String hourDk  = slots.get(0).timeDK() != null
+                            ? slots.get(0).timeDK().substring(0, 13) + ":00:00"
+                            : hourUtc;
+                    return new EdsSpotPriceRecord(hourUtc, hourDk, slots.get(0).priceArea(), avgPriceDKK);
+                })
+                .collect(Collectors.toList());
     }
 
     public List<EdsCO2Record> fetchCO2Data(LocalDate date, String zone) {

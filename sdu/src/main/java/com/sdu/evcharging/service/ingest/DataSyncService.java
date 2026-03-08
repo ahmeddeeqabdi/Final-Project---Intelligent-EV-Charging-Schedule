@@ -46,13 +46,13 @@ public class DataSyncService {
 
     public void syncSpotPrices(LocalDate date, String zone) {
         ingestService.fetchSpotPrices(date, zone).forEach(record -> {
-            LocalDateTime hour = LocalDateTime.parse(record.hourUTC(), ISO_FORMAT);
+            LocalDateTime hour = LocalDateTime.parse(record.timeUTC(), ISO_FORMAT);
             if (!energyPriceRepository.existsByHourUtcAndPriceArea(hour, zone)) {
                 energyPriceRepository.save(EnergyPrice.builder()
                         .hourUtc(hour)
                         .priceArea(zone)
                         // Convert DKK/MWh → DKK/kWh
-                        .priceDkkPerKwh(record.spotPriceDKK() / 1000.0)
+                        .priceDkkPerKwh(record.dayAheadPriceDKK() / 1000.0)
                         .build());
             }
         });
