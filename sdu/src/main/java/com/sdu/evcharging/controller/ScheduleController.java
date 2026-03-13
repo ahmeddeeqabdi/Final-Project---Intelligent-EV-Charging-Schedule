@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sdu.evcharging.dto.schedule.ChargingSlot;
 import com.sdu.evcharging.dto.schedule.ScheduleRequest;
+import com.sdu.evcharging.dto.schedule.ScheduleResult;
 import com.sdu.evcharging.service.ingest.DataSyncService;
 import com.sdu.evcharging.service.optimize.SchedulingService;
 
@@ -29,14 +29,14 @@ public class ScheduleController {
 
 
     @PostMapping
-    public ResponseEntity<List<ChargingSlot>> createSchedule(
+    public ResponseEntity<ScheduleResult> createSchedule(
             @RequestBody ScheduleRequest request,
             @RequestParam(defaultValue = "naive") String algorithm
     ) {
         log.info("POST /api/v1/schedule [algorithm={}] zone={} departure={}",
                 algorithm, request.priceZone(), request.departureTime());
 
-        List<ChargingSlot> schedule = schedulingService.createSchedule(request, algorithm);
+        ScheduleResult schedule = schedulingService.createSchedule(request, algorithm);
         return ResponseEntity.ok(schedule);
     }
 

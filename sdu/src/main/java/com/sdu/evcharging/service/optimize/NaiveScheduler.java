@@ -1,13 +1,18 @@
 package com.sdu.evcharging.service.optimize;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-import com.sdu.evcharging.domain.EnergyPrice;
+import com.sdu.evcharging.domain.strategy.ChargingStrategy;
+import com.sdu.evcharging.domain.strategy.GridData;
+import com.sdu.evcharging.domain.strategy.UserConstraints;
 import com.sdu.evcharging.dto.schedule.ChargingSlot;
-import com.sdu.evcharging.dto.schedule.ScheduleRequest;
+import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,57 +29,68 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NaiveScheduler implements ChargingStrategy {
 
-    @Override
-    public String name() {
-        return "naive";
-    }
+    private static final double ENERGY_TOLERANCE = 1e-3;
 
     @Override
-    public List<ChargingSlot> schedule(
-            ScheduleRequest request,
-            List<EnergyPrice> availablePrices
+    public ScheduleResult solve(
+            UserConstraints constraints,
+            List<GridData> priceData,
+            List<GridData> co2Data
     ) {
-        double energyNeededKwh = calculateEnergyNeeded(request);
+        double energyNeededKwh = constraints.energyRequiredKwh();
         log.info("[NaiveScheduler] Energy required: {} kWh over {} slots",
-                String.format("%.2f", energyNeededKwh), availablePrices.size());
+                String.format("%.2f", energyNeededKwh), priceData.size());
+
+        if (priceData.isEmpty() || energyNeededKwh <= ENERGY_TOLERANCE) {
+            return new ScheduleResult(List.of(), 0.0, 0.0);
+        }
+
+        Map<java.time.LocalDateTime, Double> co2ByTime = new HashMap<>();
+        if (co2Data != null) {
+            for (GridData data : co2Data) {
+                co2ByTime.putIfAbsent(data.timestamp(), data.value());
+            }
+        }
 
         List<ChargingSlot> slots = new ArrayList<>();
         double remainingKwh = energyNeededKwh;
 
-        for (EnergyPrice price : availablePrices) {
-            if (remainingKwh <= 0.001) break; // tolerance for floating-point
+        for (GridData price : priceData) {
+            if (remainingKwh <= ENERGY_TOLERANCE) {
+                break;
+            }
+            if (price.timestamp().isBefore(constraints.plugInTime())
+                    || !price.timestamp().isBefore(constraints.departureTime())) {
+                continue;
+            }
 
-            // Fill this slot fully up to max power, or just what's left
-            double energyThisSlot = Math.min(request.maxChargingPowerKw(), remainingKwh);
-            double costThisSlot   = energyThisSlot * price.getPriceDkkPerKwh();
+            double energyThisSlot = Math.min(constraints.maxChargingPowerKw(), remainingKwh);
+            double co2Value = co2ByTime.getOrDefault(price.timestamp(), 0.0);
 
             slots.add(new ChargingSlot(
-                    price.getHourUtc(),
-                    price.getHourUtc().plusHours(1),
-                    request.maxChargingPowerKw(),
+                    price.timestamp(),
                     energyThisSlot,
-                    costThisSlot,
-                    0.0  // CO2 per slot added in Week 4 when CO2 data is joined
+                    price.value(),
+                    co2Value
             ));
 
             remainingKwh -= energyThisSlot;
         }
 
-        if (remainingKwh > 0.001) {
+        if (remainingKwh > ENERGY_TOLERANCE) {
             log.warn("[NaiveScheduler] Could not fulfil full requirement. " +
-                     "{} kWh unscheduled — time window too short?",
+                     "{} kWh unscheduled - time window too short?",
                      String.format("%.2f", remainingKwh));
         }
 
-        double totalCost = slots.stream().mapToDouble(ChargingSlot::estimatedCostDKK).sum();
+        slots.sort(Comparator.comparing(ChargingSlot::timestamp));
+
+        double totalCost = slots.stream().mapToDouble(slot -> slot.powerDraw() * slot.currentPrice()).sum();
+        double totalEmissions = slots.stream().mapToDouble(slot -> slot.powerDraw() * slot.currentCO2()).sum();
+
         log.info("[NaiveScheduler] Schedule complete: {} slots, {:.2f} DKK estimated cost"
                 .replace("{:.2f}", String.format("%.2f", totalCost)), slots.size());
 
-        return slots;
-    }
-
-    private double calculateEnergyNeeded(ScheduleRequest req) {
-        double socDelta = (req.targetSocPercent() - req.currentSocPercent()) / 100.0;
-        return socDelta * req.batteryCapacityKwh();
+        return new ScheduleResult(slots, totalCost, totalEmissions);
     }
 }
