@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charging Scheduler - Test UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .result-container {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .result-container h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .result-container pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            color: #333;
+        }
+
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .loading.show {
+            display: inline-block;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            color: #0c5460;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            color: #856404;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .schedule-result {
+            margin-top: 15px;
+        }
+
+        .charging-slot {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .charging-slot strong {
+            color: #667eea;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            width: auto;
+            margin: 0;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ EV Charging Scheduler - Test UI</h1>
+
+        <div class="grid">
+            <!-- LEFT PANEL: Schedule Creation -->
+            <div class="card">
+                <h2>Create Charging Schedule</h2>
+                <div class="warning-box">
+                    ⚠️ <strong>Important:</strong> You must sync data on the right panel FIRST before generating schedules. This fetches the latest price and CO2 data from Energi Data Service.
+                </div>
+                <div class="info-box">
+                    📋 Enter your vehicle's current state and constraints to generate an optimal charging schedule.
+                </div>
+
+                <form id="scheduleForm">
+                    <!-- Battery State -->
+                    <h3 style="color: #667eea; font-size: 1.1em; margin-top: 15px;">Battery State</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="currentSoc">Current SOC (%)</label>
+                            <input type="number" id="currentSoc" min="0" max="100" step="0.1" value="20" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="targetSoc">Target SOC (%)</label>
+                            <input type="number" id="targetSoc" min="0" max="100" step="0.1" value="80" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="batteryCapacity">Battery Capacity (kWh)</label>
+                            <input type="number" id="batteryCapacity" min="0" step="0.1" value="60" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxChargingPower">Max Charging Power (kW)</label>
+                            <input type="number" id="maxChargingPower" min="0" step="0.1" value="11" required>
+                        </div>
+                    </div>
+
+                    <!-- Time Windows -->
+                    <h3 style="color: #667eea; font-size: 1.1em; margin-top: 15px;">Time Windows</h3>
+                    <div class="form-group">
+                        <label for="plugInTime">Plug-In Time</label>
+                        <input type="datetime-local" id="plugInTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="departureTime">Departure Time</label>
+                        <input type="datetime-local" id="departureTime" required>
+                    </div>
+
+                    <!-- Price Zone -->
+                    <h3 style="color: #667eea; font-size: 1.1em; margin-top: 15px;">Location & Preferences</h3>
+                    <div class="form-group">
+                        <label for="priceZone">Price Zone</label>
+                        <select id="priceZone" required>
+                            <option value="DK1">DK1 (Western Denmark)</option>
+                            <option value="DK2" selected>DK2 (Eastern Denmark)</option>
+                        </select>
+                    </div>
+
+                    <!-- Weights -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="weightPrice">Price Weight</label>
+                            <input type="number" id="weightPrice" min="0" max="1" step="0.1" value="0.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="weightCO2">CO2 Weight</label>
+                            <input type="number" id="weightCO2" min="0" max="1" step="0.1" value="0.5" required>
+                        </div>
+                    </div>
+
+                    <!-- Algorithm Selection -->
+                    <div class="form-group">
+                        <label for="algorithm">Algorithm</label>
+                        <select id="algorithm" required>
+                            <option value="naive" selected>Naive (Simple Greedy)</option>
+                            <option value="greedy">Greedy Optimization</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">🚀 Generate Schedule</button>
+                    <div class="loading" id="scheduleLoading">⏳ Generating schedule...</div>
+                </form>
+
+                <div class="result-container" id="scheduleResult">
+                    <h3>Schedule Result</h3>
+                    <div id="scheduleResultContent"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Data Sync & Info -->
+            <div class="card">
+                <h2>Data Sync & Information</h2>
+                <div class="info-box">
+                    🔄 Sync the latest spot prices and CO2 intensity data before creating a schedule.
+                </div>
+
+                <h3 style="color: #667eea; font-size: 1.1em; margin-bottom: 15px;">Sync Data</h3>
+                <div class="form-group">
+                    <label for="syncDate">Target Date</label>
+                    <select id="syncDate" required>
+                        <option value="today" selected>Today</option>
+                        <option value="tomorrow">Tomorrow</option>
+                        <option value="custom">Custom Date</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="customDateGroup" style="display: none;">
+                    <label for="customDate">Custom Date</label>
+                    <input type="date" id="customDate">
+                </div>
+
+                <div class="form-group">
+                    <label for="syncZone">Zone</label>
+                    <select id="syncZone" required>
+                        <option value="">All Zones (DK1 & DK2)</option>
+                        <option value="DK1">DK1 Only</option>
+                        <option value="DK2" selected>DK2 Only</option>
+                    </select>
+                </div>
+
+                <button type="button" onclick="syncData()" class="secondary">🔄 Sync Data</button>
+                <div class="loading" id="syncLoading">⏳ Syncing data...</div>
+
+                <div class="result-container" id="syncResult">
+                    <h3>Sync Result</h3>
+                    <div id="syncResultContent"></div>
+                </div>
+
+                <!-- API Documentation -->
+                <h3 style="color: #667eea; font-size: 1.1em; margin-top: 30px; margin-bottom: 15px;">📚 API Endpoints</h3>
+                <div class="info-box">
+                    <strong>POST /api/v1/schedule</strong><br>
+                    Creates an optimal charging schedule based on vehicle state and preferences.
+                    <br><br>
+                    <strong>POST /api/v1/schedule/sync</strong><br>
+                    Syncs spot price and CO2 intensity data from Energi Data Service.
+                </div>
+
+                <h3 style="color: #667eea; font-size: 1.1em; margin-top: 20px; margin-bottom: 15px;">⚙️ Default Values</h3>
+                <div class="info-box">
+                    <strong>Vehicle:</strong> 60 kWh battery, 11 kW charger<br>
+                    <strong>Current SOC:</strong> 20%<br>
+                    <strong>Target SOC:</strong> 80%<br>
+                    <strong>Zone:</strong> DK2 (with balanced price/CO2 weights)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default times (now + 1 hour to departure + 8 hours)
+        function setDefaultTimes() {
+            const now = new Date();
+            const plugIn = new Date(now.getTime());
+            const departure = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+
+            document.getElementById('plugInTime').value = plugIn.toISOString().slice(0, 16);
+            document.getElementById('departureTime').value = departure.toISOString().slice(0, 16);
+        }
+
+        // Toggle custom date input
+        document.getElementById('syncDate').addEventListener('change', function() {
+            document.getElementById('customDateGroup').style.display = 
+                this.value === 'custom' ? 'block' : 'none';
+        });
+
+        // Handle schedule form submission
+        document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const request = {
+                currentSocPercent: parseFloat(document.getElementById('currentSoc').value),
+                targetSocPercent: parseFloat(document.getElementById('targetSoc').value),
+                batteryCapacityKwh: parseFloat(document.getElementById('batteryCapacity').value),
+                maxChargingPowerKw: parseFloat(document.getElementById('maxChargingPower').value),
+                plugInTime: document.getElementById('plugInTime').value.replace('T', ' ') + ':00',
+                departureTime: document.getElementById('departureTime').value.replace('T', ' ') + ':00',
+                priceZone: document.getElementById('priceZone').value,
+                weightPrice: parseFloat(document.getElementById('weightPrice').value),
+                weightCO2: parseFloat(document.getElementById('weightCO2').value)
+            };
+
+            const algorithm = document.getElementById('algorithm').value;
+
+            showLoading('scheduleLoading', true);
+            
+            try {
+                const response = await fetch(`/api/v1/schedule?algorithm=${algorithm}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayScheduleResult(result);
+                } else {
+                    // Extract error message from different possible response formats
+                    let errorMsg = result.message || result.error || JSON.stringify(result);
+                    displayError('scheduleResult', errorMsg);
+                }
+            } catch (error) {
+                displayError('scheduleResult', error.message);
+            } finally {
+                showLoading('scheduleLoading', false);
+            }
+        });
+
+        async function syncData() {
+            const date = document.getElementById('syncDate').value;
+            const zone = document.getElementById('syncZone').value;
+            const customDate = document.getElementById('customDate').value;
+
+            let dateParam = date;
+            if (date === 'custom') {
+                dateParam = customDate;
+            }
+
+            showLoading('syncLoading', true);
+
+            try {
+                const url = `/api/v1/schedule/sync?date=${dateParam}${zone ? '&zone=' + zone : ''}`;
+                const response = await fetch(url, { method: 'POST' });
+                const result = await response.text();
+
+                if (response.ok) {
+                    displaySuccess('syncResult', result);
+                } else {
+                    displayError('syncResult', result);
+                }
+            } catch (error) {
+                displayError('syncResult', error.message);
+            } finally {
+                showLoading('syncLoading', false);
+            }
+        }
+
+        function displayScheduleResult(data) {
+            const resultDiv = document.getElementById('scheduleResult');
+            const contentDiv = document.getElementById('scheduleResultContent');
+            
+            let html = `<div class="schedule-result">`;
+            
+            if (data.chargingSlots && Array.isArray(data.chargingSlots)) {
+                html += `<p><strong>Total Cost:</strong> ${data.totalCost?.toFixed(2) || 'N/A'} DKK</p>`;
+                html += `<p><strong>Total CO2:</strong> ${data.totalCO2?.toFixed(2) || 'N/A'} kg</p>`;
+                html += `<p><strong>Total Energy:</strong> ${data.totalEnergyKwh?.toFixed(2) || 'N/A'} kWh</p>`;
+                html += `<p><strong>Charging Slots: ${data.chargingSlots.length}</strong></p>`;
+                
+                html += `<div style="margin-top: 15px;">`;
+                data.chargingSlots.forEach((slot, idx) => {
+                    html += `
+                        <div class="charging-slot">
+                            <strong>Slot ${idx + 1}</strong><br>
+                            Start: ${slot.startTime}<br>
+                            End: ${slot.endTime}<br>
+                            Energy: ${slot.energyKwh?.toFixed(2)} kWh | 
+                            Cost: ${slot.pricePerKwh?.toFixed(3)} DKK/kWh | 
+                            CO2: ${slot.co2IntensityGram?.toFixed(1)} g/kWh
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            } else {
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            html += `</div>`;
+            contentDiv.innerHTML = html;
+            resultDiv.classList.add('show', 'success');
+        }
+
+        function displaySuccess(elementId, message) {
+            const resultDiv = document.getElementById(elementId);
+            const contentDiv = document.getElementById(elementId + 'Content');
+            contentDiv.textContent = message;
+            resultDiv.classList.add('show', 'success');
+            resultDiv.classList.remove('error');
+        }
+
+        function displayError(elementId, message) {
+            const resultDiv = document.getElementById(elementId);
+            const contentDiv = document.getElementById(elementId + 'Content');
+            
+            // Check if error is about missing data and provide helpful guidance
+            if (message.includes('No price data found') || message.includes('zone') || message.includes('data sync')) {
+                contentDiv.innerHTML = `
+                    <div style="color: #721c24;">
+                        <strong>❌ Error: No Price Data Available</strong><br><br>
+                        ${message}<br><br>
+                        <strong>Solution:</strong> You need to sync data first!
+                        <ol style="margin-left: 20px; margin-top: 10px;">
+                            <li>Go to the <strong>Data Sync & Information</strong> panel on the right</li>
+                            <li>Select the date and zone</li>
+                            <li>Click <strong>"🔄 Sync Data"</strong></li>
+                            <li>Come back and try generating the schedule again</li>
+                        </ol>
+                    </div>
+                `;
+            } else {
+                contentDiv.textContent = message;
+            }
+            
+            resultDiv.classList.add('show', 'error');
+            resultDiv.classList.remove('success');
+        }
+
+        function showLoading(elementId, show) {
+            document.getElementById(elementId).classList.toggle('show', show);
+        }
+
+        // Initialize
+        setDefaultTimes();
+    </script>
+</body>
+</html>
