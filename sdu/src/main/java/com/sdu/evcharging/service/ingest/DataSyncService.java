@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -71,5 +73,34 @@ public class DataSyncService {
             }
         });
         log.info("CO2 sync done: zone={} date={}", zone, date);
+    }
+
+    /**
+     * Initializes the database with 3 months of historical data if it is empty.
+     * Starts automatically on application launch.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void syncHistoricalData() {
+        if (energyPriceRepository.count() == 0) {
+            log.info("=== Database is empty. Starting 3-month historical data sync ===");
+            LocalDate endDate = LocalDate.now().plusDays(1);
+            LocalDate startDate = endDate.minusMonths(3);
+
+            for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+                for (String zone : ZONES) {
+                    try {
+                        syncSpotPrices(date, zone);
+                        syncCO2Data(date, zone);
+                        // Brief sleep to avoid rate-limiting from the Energi Data Service API
+                        Thread.sleep(100);
+                    } catch (Exception e) {
+                        log.error("Failed to sync historical data for zone={} date={}", zone, date, e);
+                    }
+                }
+            }
+            log.info("=== 3-month historical data sync complete ===");
+        } else {
+            log.info("=== Database already contains data. Skipping historical 3-month sync. ===");
+        }
     }
 }
