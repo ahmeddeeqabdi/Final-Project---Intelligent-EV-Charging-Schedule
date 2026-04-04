@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
@@ -19,125 +20,165 @@ import com.sdu.evcharging.dto.schedule.ScheduleResult;
 public class GreedyChargingStrategy implements ChargingStrategy {
 
     private static final double ENERGY_TOLERANCE = 1e-3;
+    private static final double DEFAULT_WEIGHT = 0.5;
+    private static final double DEFAULT_CO2 = 0.0;
 
     @Override
     public ScheduleResult solve(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {
-        if (priceData == null || priceData.isEmpty() || constraints.energyRequiredKwh() <= ENERGY_TOLERANCE) {
-            return new ScheduleResult(List.of(), 0.0, 0.0);
+        Objects.requireNonNull(constraints, "constraints must not be null");
+
+        if (priceData == null || priceData.isEmpty()) {
+            return emptyResult();
         }
 
+        double energyRequiredKwh = constraints.energyRequiredKwh();
+        if (energyRequiredKwh <= ENERGY_TOLERANCE) {
+            return emptyResult();
+        }
+
+        Map<LocalDateTime, Double> co2ByTime = buildCo2Lookup(co2Data);
+        double defaultCo2 = averageCo2OrDefault(co2Data);
+        List<CandidateSlot> candidates = buildCandidates(constraints, priceData, co2ByTime, defaultCo2);
+
+        if (candidates.isEmpty()) {
+            return emptyResult();
+        }
+
+        Weight normalizedWeights = normalizeWeights(constraints.weightPrice(), constraints.weightCO2());
+        List<ScoredCandidateSlot> scoredCandidates = scoreAndSortCandidates(candidates, normalizedWeights);
+        List<ChargingSlot> slots = allocateSlots(scoredCandidates, constraints.maxChargingPowerKw(), energyRequiredKwh);
+
+        slots.sort(Comparator.comparing(ChargingSlot::timestamp));
+
+        double totalCost = calculateTotalCost(slots);
+        double totalEmissions = calculateTotalEmissions(slots);
+        return new ScheduleResult(slots, totalCost, totalEmissions);
+    }
+
+    private static ScheduleResult emptyResult() {
+        return new ScheduleResult(List.of(), 0.0, 0.0);
+    }
+
+    private static Map<LocalDateTime, Double> buildCo2Lookup(List<GridData> co2Data) {
         Map<LocalDateTime, Double> co2ByTime = new HashMap<>();
-        if (co2Data != null) {
-            for (GridData data : co2Data) {
-                co2ByTime.putIfAbsent(data.timestamp(), data.value());
-            }
+        if (co2Data == null) {
+            return co2ByTime;
         }
 
-        double defaultCo2 = 0.0;
-        if (co2Data != null && !co2Data.isEmpty()) {
-            defaultCo2 = co2Data.stream().mapToDouble(GridData::value).average().orElse(0.0);
+        for (GridData data : co2Data) {
+            co2ByTime.putIfAbsent(data.timestamp(), data.value());
         }
+        return co2ByTime;
+    }
 
+    private static double averageCo2OrDefault(List<GridData> co2Data) {
+        if (co2Data == null || co2Data.isEmpty()) {
+            return DEFAULT_CO2;
+        }
+        return co2Data.stream().mapToDouble(GridData::value).average().orElse(DEFAULT_CO2);
+    }
+
+    private static List<CandidateSlot> buildCandidates(
+            UserConstraints constraints,
+            List<GridData> priceData,
+            Map<LocalDateTime, Double> co2ByTime,
+            double defaultCo2
+    ) {
         List<CandidateSlot> candidates = new ArrayList<>();
         for (GridData pricePoint : priceData) {
             LocalDateTime timestamp = pricePoint.timestamp();
-            if (timestamp.isBefore(constraints.plugInTime()) || !timestamp.isBefore(constraints.departureTime())) {
+            if (!isWithinWindow(timestamp, constraints)) {
                 continue;
             }
+
             double co2 = co2ByTime.getOrDefault(timestamp, defaultCo2);
             candidates.add(new CandidateSlot(timestamp, pricePoint.value(), co2));
         }
+        return candidates;
+    }
 
-        if (candidates.isEmpty()) {
-            return new ScheduleResult(List.of(), 0.0, 0.0);
+    private static boolean isWithinWindow(LocalDateTime timestamp, UserConstraints constraints) {
+        return !timestamp.isBefore(constraints.plugInTime())
+                && timestamp.isBefore(constraints.departureTime());
+    }
+
+    private static Weight normalizeWeights(double weightPriceInput, double weightCo2Input) {
+        double weightPrice = Math.max(0.0, weightPriceInput);
+        double weightCo2 = Math.max(0.0, weightCo2Input);
+        double weightSum = weightPrice + weightCo2;
+        if (weightSum <= 0.0) {
+            return new Weight(DEFAULT_WEIGHT, DEFAULT_WEIGHT);
         }
+        return new Weight(weightPrice / weightSum, weightCo2 / weightSum);
+    }
 
+    private static List<ScoredCandidateSlot> scoreAndSortCandidates(List<CandidateSlot> candidates, Weight weight) {
         List<Double> prices = candidates.stream().map(CandidateSlot::price).toList();
         List<Double> co2Values = candidates.stream().map(CandidateSlot::co2).toList();
         List<Double> normalizedPrices = NormalizationUtility.minMaxNormalize(prices);
         List<Double> normalizedCo2 = NormalizationUtility.minMaxNormalize(co2Values);
 
-        double weightPrice = Math.max(0.0, constraints.weightPrice());
-        double weightCo2 = Math.max(0.0, constraints.weightCO2());
-        double weightSum = weightPrice + weightCo2;
-        if (weightSum <= 0.0) {
-            weightPrice = 0.5;
-            weightCo2 = 0.5;
-        } else {
-            weightPrice /= weightSum;
-            weightCo2 /= weightSum;
-        }
-
+        List<ScoredCandidateSlot> scored = new ArrayList<>(candidates.size());
         for (int i = 0; i < candidates.size(); i++) {
-            double score = (weightPrice * normalizedPrices.get(i)) + (weightCo2 * normalizedCo2.get(i));
-            candidates.get(i).setScore(score);
+            double score = (weight.priceWeight() * normalizedPrices.get(i))
+                    + (weight.co2Weight() * normalizedCo2.get(i));
+            scored.add(new ScoredCandidateSlot(candidates.get(i), score));
         }
 
-        candidates.sort(Comparator.comparingDouble(CandidateSlot::score)
-                .thenComparing(CandidateSlot::timestamp));
+        scored.sort(Comparator.comparingDouble(ScoredCandidateSlot::score)
+                .thenComparing(scoredSlot -> scoredSlot.slot().timestamp()));
+        return scored;
+    }
 
-        double remainingKwh = constraints.energyRequiredKwh();
+    private static List<ChargingSlot> allocateSlots(
+            List<ScoredCandidateSlot> scoredCandidates,
+            double maxChargingPowerKw,
+            double energyRequiredKwh
+    ) {
+        double remainingKwh = energyRequiredKwh;
         List<ChargingSlot> slots = new ArrayList<>();
 
-        for (CandidateSlot candidate : candidates) {
+        for (ScoredCandidateSlot scored : scoredCandidates) {
             if (remainingKwh <= ENERGY_TOLERANCE) {
                 break;
             }
-            double powerDraw = Math.min(constraints.maxChargingPowerKw(), remainingKwh);
+
+            double powerDraw = Math.min(maxChargingPowerKw, remainingKwh);
             if (powerDraw <= 0.0) {
                 continue;
             }
+
+            CandidateSlot slot = scored.slot();
             slots.add(new ChargingSlot(
-                    candidate.timestamp(),
+                    slot.timestamp(),
                     powerDraw,
-                    candidate.price(),
-                    candidate.co2()
+                    slot.price(),
+                    slot.co2()
             ));
             remainingKwh -= powerDraw;
         }
 
-        slots.sort(Comparator.comparing(ChargingSlot::timestamp));
-
-        double totalCost = slots.stream()
-                .mapToDouble(slot -> slot.powerDraw() * slot.currentPrice())
-                .sum();
-        double totalEmissions = slots.stream()
-                .mapToDouble(slot -> slot.powerDraw() * slot.currentCO2())
-                .sum();
-
-        return new ScheduleResult(slots, totalCost, totalEmissions);
+        return slots;
     }
 
-    private static final class CandidateSlot {
-        private final LocalDateTime timestamp;
-        private final double price;
-        private final double co2;
-        private double score;
+    private static double calculateTotalCost(List<ChargingSlot> slots) {
+        return slots.stream()
+                .mapToDouble(slot -> slot.powerDraw() * slot.currentPrice())
+                .sum();
+    }
 
-        private CandidateSlot(LocalDateTime timestamp, double price, double co2) {
-            this.timestamp = timestamp;
-            this.price = price;
-            this.co2 = co2;
-        }
+    private static double calculateTotalEmissions(List<ChargingSlot> slots) {
+        return slots.stream()
+                .mapToDouble(slot -> slot.powerDraw() * slot.currentCO2())
+                .sum();
+    }
 
-        private LocalDateTime timestamp() {
-            return timestamp;
-        }
+    private record CandidateSlot(LocalDateTime timestamp, double price, double co2) {
+    }
 
-        private double price() {
-            return price;
-        }
+    private record ScoredCandidateSlot(CandidateSlot slot, double score) {
+    }
 
-        private double co2() {
-            return co2;
-        }
-
-        private double score() {
-            return score;
-        }
-
-        private void setScore(double score) {
-            this.score = score;
-        }
+    private record Weight(double priceWeight, double co2Weight) {
     }
 }

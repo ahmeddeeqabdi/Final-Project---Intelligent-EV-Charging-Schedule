@@ -1,5 +1,6 @@
 package com.sdu.evcharging.service.optimize;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NaiveScheduler implements ChargingStrategy {
 
     private static final double ENERGY_TOLERANCE = 1e-3;
+    private static final double DEFAULT_CO2_VALUE = 0.0;
 
     @Override
     public ScheduleResult solve(
@@ -37,20 +39,20 @@ public class NaiveScheduler implements ChargingStrategy {
             List<GridData> priceData,
             List<GridData> co2Data
     ) {
-        double energyNeededKwh = constraints.energyRequiredKwh();
-        log.info("[NaiveScheduler] Energy required: {} kWh over {} slots",
-                String.format("%.2f", energyNeededKwh), priceData.size());
-
-        if (priceData.isEmpty() || energyNeededKwh <= ENERGY_TOLERANCE) {
+        if (priceData == null || priceData.isEmpty()) {
+            log.info("[NaiveScheduler] No price data available. Returning empty schedule.");
             return new ScheduleResult(List.of(), 0.0, 0.0);
         }
 
-        Map<java.time.LocalDateTime, Double> co2ByTime = new HashMap<>();
-        if (co2Data != null) {
-            for (GridData data : co2Data) {
-                co2ByTime.putIfAbsent(data.timestamp(), data.value());
-            }
+        double energyNeededKwh = constraints.energyRequiredKwh();
+        log.info("[NaiveScheduler] Energy required: {} kWh over {} slots",
+                energyNeededKwh, priceData.size());
+
+        if (energyNeededKwh <= ENERGY_TOLERANCE) {
+            return new ScheduleResult(List.of(), 0.0, 0.0);
         }
+
+        Map<LocalDateTime, Double> co2ByTime = buildCo2ByTime(co2Data);
 
         List<ChargingSlot> slots = new ArrayList<>();
         double remainingKwh = energyNeededKwh;
@@ -59,13 +61,13 @@ public class NaiveScheduler implements ChargingStrategy {
             if (remainingKwh <= ENERGY_TOLERANCE) {
                 break;
             }
-            if (price.timestamp().isBefore(constraints.plugInTime())
-                    || !price.timestamp().isBefore(constraints.departureTime())) {
+
+            if (!isWithinChargingWindow(price.timestamp(), constraints)) {
                 continue;
             }
 
             double energyThisSlot = Math.min(constraints.maxChargingPowerKw(), remainingKwh);
-            double co2Value = co2ByTime.getOrDefault(price.timestamp(), 0.0);
+            double co2Value = co2ByTime.getOrDefault(price.timestamp(), DEFAULT_CO2_VALUE);
 
             slots.add(new ChargingSlot(
                     price.timestamp(),
@@ -78,19 +80,46 @@ public class NaiveScheduler implements ChargingStrategy {
         }
 
         if (remainingKwh > ENERGY_TOLERANCE) {
-            log.warn("[NaiveScheduler] Could not fulfil full requirement. " +
-                     "{} kWh unscheduled - time window too short?",
-                     String.format("%.2f", remainingKwh));
+            log.warn("[NaiveScheduler] Could not fulfil full requirement. {} kWh unscheduled - time window too short?",
+                    remainingKwh);
         }
 
         slots.sort(Comparator.comparing(ChargingSlot::timestamp));
 
-        double totalCost = slots.stream().mapToDouble(slot -> slot.powerDraw() * slot.currentPrice()).sum();
-        double totalEmissions = slots.stream().mapToDouble(slot -> slot.powerDraw() * slot.currentCO2()).sum();
+        double totalCost = calculateTotalCost(slots);
+        double totalEmissions = calculateTotalEmissions(slots);
 
-        log.info("[NaiveScheduler] Schedule complete: {} slots, {:.2f} DKK estimated cost"
-                .replace("{:.2f}", String.format("%.2f", totalCost)), slots.size());
+        log.info("[NaiveScheduler] Schedule complete: {} slots, {} DKK estimated cost", slots.size(), totalCost);
 
         return new ScheduleResult(slots, totalCost, totalEmissions);
+    }
+
+    private static Map<LocalDateTime, Double> buildCo2ByTime(List<GridData> co2Data) {
+        Map<LocalDateTime, Double> co2ByTime = new HashMap<>();
+        if (co2Data == null) {
+            return co2ByTime;
+        }
+
+        for (GridData data : co2Data) {
+            co2ByTime.putIfAbsent(data.timestamp(), data.value());
+        }
+        return co2ByTime;
+    }
+
+    private static boolean isWithinChargingWindow(LocalDateTime timestamp, UserConstraints constraints) {
+        return !timestamp.isBefore(constraints.plugInTime())
+                && timestamp.isBefore(constraints.departureTime());
+    }
+
+    private static double calculateTotalCost(List<ChargingSlot> slots) {
+        return slots.stream()
+                .mapToDouble(slot -> slot.powerDraw() * slot.currentPrice())
+                .sum();
+    }
+
+    private static double calculateTotalEmissions(List<ChargingSlot> slots) {
+        return slots.stream()
+                .mapToDouble(slot -> slot.powerDraw() * slot.currentCO2())
+                .sum();
     }
 }
