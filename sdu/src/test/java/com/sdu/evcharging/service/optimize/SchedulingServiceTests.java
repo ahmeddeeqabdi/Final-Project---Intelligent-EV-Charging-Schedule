@@ -6,6 +6,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -82,6 +83,7 @@ class SchedulingServiceTests {
     void createSchedule_NoPrices_ThrowsException() {
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
                 "DK1", plugInTime, departureTime)).thenReturn(List.of());
+        when(energyPriceRepository.findTopByPriceAreaOrderByHourUtcDesc("DK1")).thenReturn(java.util.Optional.empty());
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             schedulingService.createSchedule(request, "greedy");
@@ -109,6 +111,37 @@ class SchedulingServiceTests {
         verify(mockStrategy).solve(any(), any(), any());
     }
 
+        @Test
+        void createSchedule_UsesCachedHistoricalPrices_WhenRequestedWindowMissing() {
+        when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
+            "DK1", plugInTime, departureTime)).thenReturn(List.of());
+
+        EnergyPrice latest = new EnergyPrice(99L, plugInTime.minusDays(1), "DK1", 0.45);
+        when(energyPriceRepository.findTopByPriceAreaOrderByHourUtcDesc("DK1"))
+            .thenReturn(java.util.Optional.of(latest));
+
+        LocalDateTime fallbackStart = latest.getHourUtc().toLocalDate().atStartOfDay();
+        LocalDateTime fallbackEnd = fallbackStart.plusDays(1);
+        when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
+            "DK1", fallbackStart, fallbackEnd)).thenReturn(List.of(
+                new EnergyPrice(1L, fallbackStart, "DK1", 0.40),
+                new EnergyPrice(2L, fallbackStart.plusHours(1), "DK1", 0.41)
+            ));
+
+        when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
+            "DK1", plugInTime, departureTime)).thenReturn(List.of());
+
+        when(strategies.get("naive")).thenReturn(mockStrategy);
+        when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
+            .thenReturn(new ScheduleResult(List.of(), 12.0, 34.0));
+
+        ScheduleResult result = schedulingService.createSchedule(request, "naive");
+
+        assertTrue(result.degradedMode().enabled());
+        assertEquals("cached-historical", result.degradedMode().source());
+        assertTrue(result.degradedMode().dataAgeHours() >= 0L);
+        }
+
     @Test
     void createSchedule_NoStrategiesAvailable_ThrowsException() {
         EnergyPrice price1 = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
@@ -124,9 +157,5 @@ class SchedulingServiceTests {
         });
 
         assertTrue(exception.getMessage().contains("No scheduling strategy is registered"));
-    }
-
-    private void assertTrue(boolean condition) {
-        org.junit.jupiter.api.Assertions.assertTrue(condition);
     }
 }

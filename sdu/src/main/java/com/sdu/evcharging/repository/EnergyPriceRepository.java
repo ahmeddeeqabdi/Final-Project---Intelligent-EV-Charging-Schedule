@@ -2,6 +2,7 @@ package com.sdu.evcharging.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,4 +17,6 @@ public interface EnergyPriceRepository extends JpaRepository<EnergyPrice, Long> 
             LocalDateTime from,
             LocalDateTime to
     );
+
+    Optional<EnergyPrice> findTopByPriceAreaOrderByHourUtcDesc(String priceArea);
 }

@@ -31,7 +31,14 @@ public class DataSyncService {
     private final CO2IntensityRepository co2IntensityRepository;
 
     public void syncSpotPrices(LocalDate date, String zone) {
-        ingestService.fetchSpotPrices(date, zone).forEach(record -> {
+        List<com.sdu.evcharging.dto.ingest.EdsSpotPriceRecord> records = ingestService.fetchSpotPrices(date, zone);
+        if (records.isEmpty()) {
+            log.warn("Spot price sync degraded: no records available [zone={}] [date={}]", zone, date);
+            return;
+        }
+
+        int inserted = 0;
+        for (com.sdu.evcharging.dto.ingest.EdsSpotPriceRecord record : records) {
             LocalDateTime hour = LocalDateTime.parse(record.timeUTC(), ISO_FORMAT);
             if (!energyPriceRepository.existsByHourUtcAndPriceArea(hour, zone)) {
                 energyPriceRepository.save(EnergyPrice.builder()
@@ -40,13 +47,22 @@ public class DataSyncService {
                         // Convert DKK/MWh → DKK/kWh
                         .priceDkkPerKwh(record.dayAheadPriceDKK() / 1000.0)
                         .build());
+                inserted++;
             }
-        });
-        log.info("Spot price sync done: zone={} date={}", zone, date);
+        }
+
+        log.info("Spot price sync done: zone={} date={} fetched={} inserted={}", zone, date, records.size(), inserted);
     }
 
     public void syncCO2Data(LocalDate date, String zone) {
-        ingestService.fetchCO2Data(date, zone).forEach(record -> {
+        List<com.sdu.evcharging.dto.ingest.EdsCO2Record> records = ingestService.fetchCO2Data(date, zone);
+        if (records.isEmpty()) {
+            log.warn("CO2 sync degraded: no records available [zone={}] [date={}]", zone, date);
+            return;
+        }
+
+        int inserted = 0;
+        for (com.sdu.evcharging.dto.ingest.EdsCO2Record record : records) {
             LocalDateTime ts = LocalDateTime.parse(record.minutes5UTC(), ISO_FORMAT);
             if (!co2IntensityRepository.existsByTimestampUtcAndPriceArea(ts, zone)) {
                 co2IntensityRepository.save(CO2Intensity.builder()
@@ -54,9 +70,11 @@ public class DataSyncService {
                         .priceArea(zone)
                         .gPerKwh(record.co2Emission())
                         .build());
+                inserted++;
             }
-        });
-        log.info("CO2 sync done: zone={} date={}", zone, date);
+        }
+
+        log.info("CO2 sync done: zone={} date={} fetched={} inserted={}", zone, date, records.size(), inserted);
     }
 
     /**

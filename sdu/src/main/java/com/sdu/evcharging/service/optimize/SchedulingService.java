@@ -1,5 +1,6 @@
 package com.sdu.evcharging.service.optimize;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ public class SchedulingService {
 
     private static final String DEFAULT_STRATEGY_KEY = "naive";
     private static final double DEFAULT_CO2_VALUE = 0.0;
+    private static final String DEGRADE_REASON = "EDS API unavailable - serving cached historical prices";
 
     private final EnergyPriceRepository energyPriceRepository;
     private final CO2IntensityRepository co2IntensityRepository;
@@ -38,14 +40,14 @@ public class SchedulingService {
     public ScheduleResult createSchedule(ScheduleRequest request, String algorithm) {
         Objects.requireNonNull(request, "request must not be null");
 
-        List<EnergyPrice> prices = loadPriceData(request);
+        PriceSelection priceSelection = loadPriceData(request);
         List<CO2Intensity> co2Series = loadCo2Data(request);
 
-        if (prices.isEmpty()) {
+        if (priceSelection.prices().isEmpty()) {
             throw new IllegalStateException(
                     "No price data found for zone=" + request.priceZone() +
                             " between " + request.plugInTime() + " and " + request.departureTime() +
-                            ". Trigger a data sync first."
+                            ". Trigger a data sync first or wait for API recovery."
             );
         }
 
@@ -53,19 +55,54 @@ public class SchedulingService {
         ChargingStrategy strategy = resolveStrategy(strategyKey);
 
         UserConstraints constraints = toConstraints(request);
-        List<GridData> priceData = toPriceData(prices);
+        List<GridData> priceData = toPriceData(priceSelection.prices());
         List<GridData> co2Data = toHourlyCo2Data(co2Series);
 
         log.info("Running [{}] scheduler for zone={}", strategyKey, request.priceZone());
-        return strategy.solve(constraints, priceData, co2Data);
+        ScheduleResult base = strategy.solve(constraints, priceData, co2Data);
+        return new ScheduleResult(
+            base.slots(),
+            base.totalPredictedCost(),
+            base.totalPredictedEmissions(),
+            priceSelection.degradedMode()
+        );
     }
 
-    private List<EnergyPrice> loadPriceData(ScheduleRequest request) {
-        return energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
+        private PriceSelection loadPriceData(ScheduleRequest request) {
+        List<EnergyPrice> live = energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
                 request.priceZone(),
                 request.plugInTime(),
                 request.departureTime()
         );
+        if (!live.isEmpty()) {
+            return new PriceSelection(live, ScheduleResult.DegradedMode.live());
+        }
+
+        return energyPriceRepository.findTopByPriceAreaOrderByHourUtcDesc(request.priceZone())
+            .map(latest -> {
+                LocalDateTime sourceDayStart = latest.getHourUtc().toLocalDate().atStartOfDay();
+                LocalDateTime sourceDayEnd = sourceDayStart.plusDays(1);
+                List<EnergyPrice> sourceDay = energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
+                    request.priceZone(),
+                    sourceDayStart,
+                    sourceDayEnd
+                );
+
+                if (sourceDay.isEmpty()) {
+                return new PriceSelection(List.of(), ScheduleResult.DegradedMode.live());
+                }
+
+                List<EnergyPrice> shifted = shiftPriceSeriesIntoRequestedWindow(sourceDay, request);
+                long dataAgeHours = Math.max(0L, Duration.between(latest.getHourUtc(), request.plugInTime()).toHours());
+
+                log.warn("Serving cached historical prices in degraded mode [zone={}] sourceDay={} dataAgeHours={}",
+                    request.priceZone(), sourceDayStart.toLocalDate(), dataAgeHours);
+                return new PriceSelection(
+                    shifted,
+                    ScheduleResult.DegradedMode.degraded(DEGRADE_REASON, "cached-historical", dataAgeHours)
+                );
+            })
+            .orElseGet(() -> new PriceSelection(List.of(), ScheduleResult.DegradedMode.live()));
     }
 
     private List<CO2Intensity> loadCo2Data(ScheduleRequest request) {
@@ -117,6 +154,23 @@ public class SchedulingService {
                 .toList();
     }
 
+    private static List<EnergyPrice> shiftPriceSeriesIntoRequestedWindow(List<EnergyPrice> sourceDay, ScheduleRequest request) {
+        long slotsInWindow = Duration.between(request.plugInTime(), request.departureTime()).toHours();
+        int slots = Math.max(1, (int) slotsInWindow);
+
+        List<EnergyPrice> shifted = new ArrayList<>(slots);
+        for (int i = 0; i < slots; i++) {
+            EnergyPrice source = sourceDay.get(i % sourceDay.size());
+            shifted.add(EnergyPrice.builder()
+                    .hourUtc(request.plugInTime().plusHours(i))
+                    .priceArea(request.priceZone())
+                    .priceDkkPerKwh(source.getPriceDkkPerKwh())
+                    .build());
+        }
+
+        return shifted;
+    }
+
     private List<GridData> toHourlyCo2Data(List<CO2Intensity> co2Series) {
         if (co2Series == null || co2Series.isEmpty()) {
             return List.of();
@@ -136,5 +190,11 @@ public class SchedulingService {
 
         hourly.sort(Comparator.comparing(GridData::timestamp));
         return hourly;
+    }
+
+    private record PriceSelection(
+            List<EnergyPrice> prices,
+            ScheduleResult.DegradedMode degradedMode
+    ) {
     }
 }

@@ -25,3 +25,12 @@ app:
   security:
     username: ${APP_SECURITY_USERNAME}
     password: ${APP_SECURITY_PASSWORD}
+
+resilience:
+  eds:
+    failure-rate-threshold: 50
+    sliding-window-size: 10
+    wait-duration-open-seconds: 30
+    permitted-half-open-calls: 3
+    request-timeout-seconds: 8
+    fallback-max-age-hours: 48
