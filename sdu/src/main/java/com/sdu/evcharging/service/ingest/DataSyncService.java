@@ -81,8 +81,10 @@ public class DataSyncService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void syncHistoricalData() {
-        if (energyPriceRepository.count() == 0) {
-            log.info("=== Database is empty. Starting 3-month historical data sync ===");
+        // 90 days * 24 hours * 2 zones = 4320 records.
+        // If we have significantly less, the initial sync was interrupted.
+        if (energyPriceRepository.count() < 4000) {
+            log.info("=== Database has less than 3 months of data. Starting/Resuming historical data sync ===");
             LocalDate endDate = LocalDate.now().plusDays(1);
             LocalDate startDate = endDate.minusMonths(3);
 
