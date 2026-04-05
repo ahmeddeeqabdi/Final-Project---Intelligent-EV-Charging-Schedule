@@ -2,7 +2,6 @@ package com.sdu.evcharging.controller;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.List;
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
@@ -14,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sdu.evcharging.dto.schedule.ScheduleRequest;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
-import com.sdu.evcharging.service.ingest.DataSyncService;
+import com.sdu.evcharging.service.ingest.GridDataSyncService;
 import com.sdu.evcharging.service.optimize.SchedulingService;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ public class ScheduleController {
     private static final Set<String> ALLOWED_ZONES = Set.of("DK1", "DK2");
 
     private final SchedulingService schedulingService;
-    private final DataSyncService dataSyncService;
+    private final GridDataSyncService gridDataSyncService;
 
 
     @PostMapping
@@ -54,14 +53,10 @@ public class ScheduleController {
         log.info("POST /api/v1/schedule/sync [date={}] [zone={}]", date, zone);
 
         LocalDate targetDate = parseDateParam(date);
-        List<String> zones = zone != null ? List.of(normalizeAndValidateZone(zone)) : List.of("DK1", "DK2");
-        
-        for (String z : zones) {
-            dataSyncService.syncSpotPrices(targetDate, z);
-            dataSyncService.syncCO2Data(targetDate, z);
-        }
-        
-        return ResponseEntity.ok("Data synced for " + targetDate + " in zones: " + zones);
+        String normalizedZone = zone != null ? normalizeAndValidateZone(zone) : null;
+
+        String summary = gridDataSyncService.syncForDate(targetDate, normalizedZone, "manual-endpoint");
+        return ResponseEntity.ok(summary);
     }
 
     private static void validateZone(String zone) {

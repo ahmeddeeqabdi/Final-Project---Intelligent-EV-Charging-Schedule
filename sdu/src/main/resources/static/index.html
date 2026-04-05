@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -234,7 +234,7 @@
             <div class="card">
                 <h2>Create Schedule</h2>
                 <div class="warning-box">
-                    <strong>Important:</strong> You must sync data on the right panel FIRST before generating schedules. This fetches the latest price and CO2 data.
+                    <strong>Important:</strong> Grid data is synced automatically every day at 13:05 (Europe/Copenhagen). Use manual sync on the right only for admin/testing or on-demand refresh.
                 </div>
                 <div class="info-box">
                     Enter your vehicle's current state and constraints to generate an optimal charging schedule.
@@ -333,10 +333,10 @@
             <div class="card">
                 <h2>Data Sync & Information</h2>
                 <div class="info-box">
-                    Sync the latest spot prices and CO2 intensity data before creating a schedule.
+                    Automatic sync runs daily at 13:05 (Europe/Copenhagen) for both DK1 and DK2, covering today and tomorrow.
                 </div>
 
-                <h3>Sync Data</h3>
+                <h3>Manual Sync (Optional)</h3>
                 <div class="form-group">
                     <label for="syncDate">Target Date</label>
                     <select id="syncDate" required>
@@ -360,11 +360,11 @@
                     </select>
                 </div>
 
-                <button type="button" onclick="syncData()" class="secondary">Sync Data</button>
-                <div class="loading" id="syncLoading">Syncing data...</div>
+                <button type="button" onclick="syncData()" class="secondary">Run Manual Sync</button>
+                <div class="loading" id="syncLoading">Running manual sync...</div>
 
                 <div class="result-container" id="syncResult">
-                    <h3>Sync Result</h3>
+                    <h3>Manual Sync Result</h3>
                     <div id="syncResultContent"></div>
                 </div>
 
@@ -375,7 +375,7 @@
                     Creates an optimal charging schedule based on vehicle state and preferences.
                     <br><br>
                     <strong>POST /api/v1/schedule/sync</strong><br>
-                    Syncs spot price and CO2 intensity data from Energi Data Service.
+                    Triggers manual sync for a selected date/zone (admin/testing).
                 </div>
 
                 <h3>Default Values</h3>
@@ -383,7 +383,8 @@
                     <strong>Vehicle:</strong> 60 kWh battery, 11 kW charger<br>
                     <strong>Current SOC:</strong> 20%<br>
                     <strong>Target SOC:</strong> 80%<br>
-                    <strong>Zone:</strong> DK2 (with balanced price/CO2 weights)
+                    <strong>Zone:</strong> DK2 (with balanced price/CO2 weights)<br>
+                    <strong>Auto Sync:</strong> Daily 13:05 Europe/Copenhagen (DK1 + DK2, today + tomorrow)
                 </div>
             </div>
         </div>

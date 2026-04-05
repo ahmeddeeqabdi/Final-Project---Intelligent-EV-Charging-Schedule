@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.sdu.evcharging.domain.CO2Intensity;
@@ -30,21 +29,6 @@ public class DataSyncService {
     private final EnergyDataIngestService ingestService;
     private final EnergyPriceRepository energyPriceRepository;
     private final CO2IntensityRepository co2IntensityRepository;
-
-    /**
-     * Runs daily at 13:15 CET — Energinet publishes day-ahead prices
-     * between 12:00 and 13:00, so 13:15 is a safe trigger window.
-     */
-    @Scheduled(cron = "0 15 13 * * *")
-    public void syncDayAheadData() {
-        log.info("=== Daily day-ahead sync triggered ===");
-        LocalDate tomorrow = LocalDate.now().plusDays(1);
-        for (String zone : ZONES) {
-            syncSpotPrices(tomorrow, zone);
-            syncCO2Data(tomorrow, zone);
-        }
-        log.info("=== Daily sync complete ===");
-    }
 
     public void syncSpotPrices(LocalDate date, String zone) {
         ingestService.fetchSpotPrices(date, zone).forEach(record -> {
