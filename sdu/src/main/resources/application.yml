@@ -3,10 +3,10 @@ spring:
     name: ev-charging-scheduler
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/mydatabase
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mydatabase}
     driver-class-name: org.postgresql.Driver
-    username: myuser
-    password: secret
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -20,3 +20,8 @@ energidataservice:
 
 scheduling:
   enabled: true
+
+app:
+  security:
+    username: ${APP_SECURITY_USERNAME}
+    password: ${APP_SECURITY_PASSWORD}
