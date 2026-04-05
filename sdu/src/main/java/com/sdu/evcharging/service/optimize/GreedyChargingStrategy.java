@@ -1,12 +1,13 @@
 package com.sdu.evcharging.service.optimize;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -60,15 +61,17 @@ public class GreedyChargingStrategy implements ChargingStrategy {
     }
 
     private static Map<LocalDateTime, Double> buildCo2Lookup(List<GridData> co2Data) {
-        Map<LocalDateTime, Double> co2ByTime = new HashMap<>();
-        if (co2Data == null) {
-            return co2ByTime;
+        if (co2Data == null || co2Data.isEmpty()) {
+            return Map.of();
         }
 
-        for (GridData data : co2Data) {
-            co2ByTime.putIfAbsent(data.timestamp(), data.value());
-        }
-        return co2ByTime;
+        return co2Data.stream()
+                .filter(Objects::nonNull)
+                .filter(data -> data.timestamp() != null)
+                .collect(Collectors.groupingBy(
+                        data -> data.timestamp().truncatedTo(ChronoUnit.HOURS),
+                        Collectors.averagingDouble(GridData::value)
+                ));
     }
 
     private static double averageCo2OrDefault(List<GridData> co2Data) {
@@ -91,7 +94,8 @@ public class GreedyChargingStrategy implements ChargingStrategy {
                 continue;
             }
 
-            double co2 = co2ByTime.getOrDefault(timestamp, defaultCo2);
+            LocalDateTime hourBucket = timestamp.truncatedTo(ChronoUnit.HOURS);
+            double co2 = co2ByTime.getOrDefault(hourBucket, defaultCo2);
             candidates.add(new CandidateSlot(timestamp, pricePoint.value(), co2));
         }
         return candidates;
