@@ -1,7 +1,9 @@
 package com.sdu.evcharging.controller;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ScheduleController {
 
+    private static final Set<String> ALLOWED_ZONES = Set.of("DK1", "DK2");
+
     private final SchedulingService schedulingService;
     private final DataSyncService dataSyncService;
 
@@ -33,6 +37,8 @@ public class ScheduleController {
             @RequestBody ScheduleRequest request,
             @RequestParam(defaultValue = "naive") String algorithm
     ) {
+        validateZone(request.priceZone());
+
         log.info("POST /api/v1/schedule [algorithm={}] zone={} departure={}",
                 algorithm, request.priceZone(), request.departureTime());
 
@@ -46,12 +52,9 @@ public class ScheduleController {
             @RequestParam(required = false) String zone
     ) {
         log.info("POST /api/v1/schedule/sync [date={}] [zone={}]", date, zone);
-        
-        LocalDate targetDate = "today".equalsIgnoreCase(date) ? LocalDate.now() : 
-                               "tomorrow".equalsIgnoreCase(date) ? LocalDate.now().plusDays(1) :
-                               LocalDate.parse(date);
-        
-        List<String> zones = zone != null ? List.of(zone) : List.of("DK1", "DK2");
+
+        LocalDate targetDate = parseDateParam(date);
+        List<String> zones = zone != null ? List.of(normalizeAndValidateZone(zone)) : List.of("DK1", "DK2");
         
         for (String z : zones) {
             dataSyncService.syncSpotPrices(targetDate, z);
@@ -59,5 +62,36 @@ public class ScheduleController {
         }
         
         return ResponseEntity.ok("Data synced for " + targetDate + " in zones: " + zones);
+    }
+
+    private static void validateZone(String zone) {
+        normalizeAndValidateZone(zone);
+    }
+
+    private static String normalizeAndValidateZone(String zone) {
+        if (zone == null || zone.isBlank()) {
+            throw new IllegalArgumentException("Zone must be DK1 or DK2");
+        }
+
+        String normalized = zone.trim().toUpperCase();
+        if (!ALLOWED_ZONES.contains(normalized)) {
+            throw new IllegalArgumentException("Zone must be DK1 or DK2");
+        }
+
+        return normalized;
+    }
+
+    private static LocalDate parseDateParam(String date) {
+        if ("today".equalsIgnoreCase(date)) {
+            return LocalDate.now();
+        }
+        if ("tomorrow".equalsIgnoreCase(date)) {
+            return LocalDate.now().plusDays(1);
+        }
+        try {
+            return LocalDate.parse(date);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Date must be 'today', 'tomorrow', or ISO format yyyy-MM-dd");
+        }
     }
 }
