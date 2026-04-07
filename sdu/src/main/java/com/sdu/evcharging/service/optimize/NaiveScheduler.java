@@ -17,15 +17,15 @@ import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Naive (Baseline) Scheduler.
- *
- * Strategy: Charge immediately from plug-in time at max power
- * until the required energy is delivered. Ignores all cost/CO2 signals.
- *
- * Complexity: O(N) — iterates over slots once.
- * Purpose: Establishes the baseline for cost/CO2 comparison.
- */
+
+
+
+
+
+
+
+
+
 @Component("naive")
 @Slf4j
 public class NaiveScheduler implements ChargingStrategy {

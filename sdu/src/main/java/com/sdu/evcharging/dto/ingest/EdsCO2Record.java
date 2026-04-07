@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EdsCO2Record(
 
-        // CO2Emis dataset with 5-minute intervals
+        
         @JsonProperty("Minutes5UTC")
         String minutes5UTC,
 
@@ -16,7 +16,7 @@ public record EdsCO2Record(
         @JsonProperty("PriceArea")
         String priceArea,
 
-        // Unit: gCO2/kWh
+        
         @JsonProperty("CO2Emission")
         Double co2Emission
 ) {}

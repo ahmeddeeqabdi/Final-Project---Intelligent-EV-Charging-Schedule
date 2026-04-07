@@ -114,7 +114,7 @@ public class EnergyDataIngestService {
         log.info("Raw 15-min records from DayAheadPrices (zone={}, date={}):", zone, date);
         raw.forEach(r -> log.info("  {} UTC -> {} DKK/MWh", r.timeUTC(), r.dayAheadPriceDKK()));
 
-        // DayAheadPrices is 15-min resolution — aggregate to hourly averages
+        
         List<EdsSpotPriceRecord> hourly = aggregateToHourly(raw);
 
         log.info("Aggregated to hourly (zone={}, date={}):", zone, date);
@@ -123,12 +123,12 @@ public class EnergyDataIngestService {
         return hourly;
     }
 
-    /**
-     * Collapses 15-minute DayAheadPrices records into hourly slots by
-     * grouping on the truncated UTC hour and averaging the price.
-     */
+    
+
+
+
     private List<EdsSpotPriceRecord> aggregateToHourly(List<EdsSpotPriceRecord> raw) {
-        // Key = "YYYY-MM-DDTHH" (first 13 chars of TimeUTC)
+        
         Map<String, List<EdsSpotPriceRecord>> byHour = raw.stream()
                 .filter(r -> r.timeUTC() != null)
                 .collect(Collectors.groupingBy(r -> r.timeUTC().substring(0, 13)));
@@ -141,7 +141,7 @@ public class EnergyDataIngestService {
                                                         .mapToDouble(r -> nullableDouble(r.dayAheadPriceDKK()))
                             .average()
                             .orElse(0.0);
-                    // Use the :00:00 version as the canonical hour timestamp
+                    
                     String hourUtc = entry.getKey() + ":00:00";
                     String hourDk  = slots.get(0).timeDK() != null
                             ? slots.get(0).timeDK().substring(0, 13) + ":00:00"

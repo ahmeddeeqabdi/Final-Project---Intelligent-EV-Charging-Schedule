@@ -35,7 +35,7 @@ public class CO2Intensity {
     @Column(name = "price_area", nullable = false, length = 3)
     private String priceArea;
 
-    // Unit: gCO2/kWh
+    
     @Column(name = "g_per_kwh", nullable = false)
     private Double gPerKwh;
 }

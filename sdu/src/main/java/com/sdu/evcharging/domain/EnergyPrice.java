@@ -33,9 +33,9 @@ public class EnergyPrice {
     private LocalDateTime hourUtc;
 
     @Column(name = "price_area", nullable = false, length = 3)
-    private String priceArea; // "DK1" or "DK2"
+    private String priceArea; 
 
-    // Stored in DKK/kWh (converted from DKK/MWh on ingest)
+    
     @Column(name = "price_dkk_per_kwh", nullable = false)
     private Double priceDkkPerKwh;
 }

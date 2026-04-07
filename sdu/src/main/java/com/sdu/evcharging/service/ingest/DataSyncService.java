@@ -44,7 +44,7 @@ public class DataSyncService {
                 energyPriceRepository.save(EnergyPrice.builder()
                         .hourUtc(hour)
                         .priceArea(zone)
-                        // Convert DKK/MWh → DKK/kWh
+                        
                         .priceDkkPerKwh(record.dayAheadPriceDKK() / 1000.0)
                         .build());
                 inserted++;
@@ -77,14 +77,14 @@ public class DataSyncService {
         log.info("CO2 sync done: zone={} date={} fetched={} inserted={}", zone, date, records.size(), inserted);
     }
 
-    /**
-     * Initializes the database with 3 months of historical data if it is empty.
-     * Starts automatically on application launch.
-     */
+    
+
+
+
     @EventListener(ApplicationReadyEvent.class)
     public void syncHistoricalData() {
-        // 90 days * 24 hours * 2 zones = 4320 records.
-        // If we have significantly less, the initial sync was interrupted.
+        
+        
         if (energyPriceRepository.count() < 4000) {
             log.info("=== Database has less than 3 months of data. Starting/Resuming historical data sync ===");
             LocalDate endDate = LocalDate.now().plusDays(1);
@@ -95,7 +95,7 @@ public class DataSyncService {
                     try {
                         syncSpotPrices(date, zone);
                         syncCO2Data(date, zone);
-                        // Brief sleep to avoid rate-limiting from the Energi Data Service API
+                        
                         Thread.sleep(100);
                     } catch (Exception e) {
                         log.error("Failed to sync historical data for zone={} date={}", zone, date, e);

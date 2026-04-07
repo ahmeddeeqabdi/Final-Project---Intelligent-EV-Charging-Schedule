@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -230,7 +230,7 @@
         <h1>EV Charging Scheduler</h1>
 
         <div class="grid">
-            <!-- LEFT PANEL: Schedule Creation -->
+            
             <div class="card">
                 <h2>Create Schedule</h2>
                 <div class="warning-box">
@@ -253,7 +253,7 @@
                 </div>
 
                 <form id="scheduleForm">
-                    <!-- Battery State -->
+                    
                     <h3>Battery State</h3>
                     <div class="form-row">
                         <div class="form-group">
@@ -277,7 +277,7 @@
                         </div>
                     </div>
 
-                    <!-- Time Windows -->
+                    
                     <h3>Time Windows</h3>
                     <div class="form-group">
                         <label for="plugInTime">Plug-In Time</label>
@@ -288,7 +288,7 @@
                         <input type="datetime-local" id="departureTime" required>
                     </div>
 
-                    <!-- Price Zone -->
+                    
                     <h3>Location & Preferences</h3>
                     <div class="form-group">
                         <label for="priceZone">Price Zone</label>
@@ -298,7 +298,7 @@
                         </select>
                     </div>
 
-                    <!-- Weights -->
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="weightPrice">Price Weight</label>
@@ -310,7 +310,7 @@
                         </div>
                     </div>
 
-                    <!-- Algorithm Selection -->
+                    
                     <div class="form-group">
                         <label for="algorithm">Algorithm</label>
                         <select id="algorithm" required>
@@ -329,7 +329,7 @@
                 </div>
             </div>
 
-            <!-- RIGHT PANEL: Data Sync & Info -->
+            
             <div class="card">
                 <h2>Data Sync & Information</h2>
                 <div class="info-box">
@@ -368,7 +368,7 @@
                     <div id="syncResultContent"></div>
                 </div>
 
-                <!-- API Documentation -->
+                
                 <h3>API Endpoints</h3>
                 <div class="info-box">
                     <strong>POST /api/v1/schedule</strong><br>

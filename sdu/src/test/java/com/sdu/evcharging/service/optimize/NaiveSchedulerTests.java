@@ -58,9 +58,9 @@ class NaiveSchedulerTests {
         assertEquals(t3, slot3.timestamp());
         assertEquals(1.0, slot3.powerDraw(), 1e-9);
 
-        // Calculate expected cost: (7 * 0.4) + (7 * 0.2) + (1 * 0.3) = 2.8 + 1.4 + 0.3 = 4.5
+        
         assertEquals(4.5, result.totalPredictedCost(), 1e-9);
-        // Calculate expected CO2: (7 * 200) + (7 * 300) + (1 * 100) = 1400 + 2100 + 100 = 3600
+        
         assertEquals(3600.0, result.totalPredictedEmissions(), 1e-9);
     }
 
@@ -104,10 +104,10 @@ class NaiveSchedulerTests {
         );
 
         List<GridData> priceData = List.of(
-                new GridData(plugIn.minusHours(1), 0.10), // Before plug-in
-                new GridData(plugIn, 0.20),               // Valid
-                new GridData(plugIn.plusHours(1), 0.30),  // Valid
-                new GridData(plugIn.plusHours(2), 0.40)   // After/at departure
+                new GridData(plugIn.minusHours(1), 0.10), 
+                new GridData(plugIn, 0.20),               
+                new GridData(plugIn.plusHours(1), 0.30),  
+                new GridData(plugIn.plusHours(2), 0.40)   
         );
 
         ScheduleResult result = scheduler.solve(constraints, priceData, null);
