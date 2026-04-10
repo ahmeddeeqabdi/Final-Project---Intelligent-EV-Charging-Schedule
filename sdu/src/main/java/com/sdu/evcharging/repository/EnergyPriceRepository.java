@@ -12,6 +12,8 @@ public interface EnergyPriceRepository extends JpaRepository<EnergyPrice, Long> 
 
     boolean existsByHourUtcAndPriceArea(LocalDateTime hourUtc, String priceArea);
 
+    Optional<EnergyPrice> findByHourUtcAndPriceArea(LocalDateTime hourUtc, String priceArea);
+
     List<EnergyPrice> findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
             String priceArea,
             LocalDateTime from,

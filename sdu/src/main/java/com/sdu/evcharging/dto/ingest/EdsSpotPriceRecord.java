@@ -18,7 +18,21 @@ public record EdsSpotPriceRecord(
         @JsonProperty("PriceArea")
         String priceArea,
 
-        
-        @JsonProperty("DayAheadPriceDKK")
-        Double dayAheadPriceDKK
-) {}
+                @JsonProperty("DayAheadPriceEUR")
+                Double dayAheadPriceEUR,
+
+                @JsonProperty("DayAheadPriceDKK")
+                Double dayAheadPriceDKK
+) {
+        private static final double EUR_TO_DKK_FALLBACK_RATE = 7.45;
+
+        public Double effectivePriceDkk() {
+                if (dayAheadPriceDKK != null) {
+                        return dayAheadPriceDKK;
+                }
+                if (dayAheadPriceEUR != null) {
+                        return dayAheadPriceEUR * EUR_TO_DKK_FALLBACK_RATE;
+                }
+                return null;
+        }
+}

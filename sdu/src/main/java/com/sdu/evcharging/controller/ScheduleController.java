@@ -5,14 +5,14 @@ import java.time.format.DateTimeParseException;
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sdu.evcharging.dto.schedule.ScheduleRequest;
-import com.sdu.evcharging.dto.schedule.ScheduleResult;
+import com.sdu.evcharging.security.AuthUserPrincipal;
 import com.sdu.evcharging.service.ingest.GridDataSyncService;
 import com.sdu.evcharging.service.optimize.SchedulingService;
 
@@ -32,8 +32,9 @@ public class ScheduleController {
 
 
     @PostMapping
-    public ResponseEntity<ScheduleResult> createSchedule(
-            @RequestBody ScheduleRequest request,
+        public ResponseEntity<com.sdu.evcharging.dto.schedule.ScheduleResult> createSchedule(
+            @AuthenticationPrincipal AuthUserPrincipal principal,
+            @RequestBody com.sdu.evcharging.dto.schedule.ScheduleRequest request,
             @RequestParam(defaultValue = "naive") String algorithm
     ) {
         validateZone(request.priceZone());
@@ -41,7 +42,11 @@ public class ScheduleController {
         log.info("POST /api/v1/schedule [algorithm={}] zone={} departure={}",
                 algorithm, request.priceZone(), request.departureTime());
 
-        ScheduleResult schedule = schedulingService.createSchedule(request, algorithm);
+        com.sdu.evcharging.dto.schedule.ScheduleResult schedule = schedulingService.createSchedule(
+            request,
+            algorithm,
+            principal.userId()
+        );
         return ResponseEntity.ok(schedule);
     }
 
