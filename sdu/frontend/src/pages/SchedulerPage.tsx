@@ -1,0 +1,195 @@
+import { useEffect, useMemo, useState } from 'react'
+import { AlertTriangle, CarFront, LogOut, Moon, Sun } from 'lucide-react'
+import { ResponsiveDashboard } from '@/components/layout/ResponsiveDashboard'
+import { ScheduleChart } from '@/components/schedule/ScheduleChart'
+import { ScheduleForm } from '@/components/schedule/ScheduleForm'
+import { ResultsSummary } from '@/components/schedule/ResultsSummary'
+import { StatusBanner } from '@/components/schedule/StatusBanner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { useAuth } from '@/hooks/useAuth'
+import { useSchedule } from '@/hooks/useSchedule'
+import { useUserConstraints } from '@/hooks/useUserConstraints'
+import { cn } from '@/lib/utils'
+import { type ScheduleFormValues } from '@/types/api'
+
+type ThemeMode = 'light' | 'dark'
+const INTRO_DURATION_MS = 2600
+
+const getInitialTheme = (): ThemeMode => {
+  if (typeof window === 'undefined') {
+    return 'light'
+  }
+
+  const stored = window.localStorage.getItem('theme-mode')
+  if (stored === 'light' || stored === 'dark') {
+    return stored
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function SchedulerPage() {
+  const { user, logout } = useAuth()
+  const scheduleMutation = useSchedule()
+  const { query: constraintsQuery, updateMutation: updateConstraintsMutation } = useUserConstraints()
+
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
+  const [showIntro, setShowIntro] = useState<boolean>(true)
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    window.localStorage.setItem('theme-mode', theme)
+  }, [theme])
+
+  useEffect(() => {
+    if (!showIntro) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowIntro(false)
+    }, INTRO_DURATION_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [showIntro])
+
+  const formDefaults = useMemo(() => {
+    if (!constraintsQuery.data) {
+      return undefined
+    }
+
+    return {
+      batteryCapacity: constraintsQuery.data.defaultBatteryCapacity,
+      maxPower: constraintsQuery.data.defaultMaxPower,
+      costWeight: constraintsQuery.data.defaultPreferenceWeight,
+    }
+  }, [constraintsQuery.data])
+
+  const formKey = useMemo(() => {
+    if (!constraintsQuery.data) {
+      return 'form-defaults-empty'
+    }
+
+    return [
+      constraintsQuery.data.defaultBatteryCapacity,
+      constraintsQuery.data.defaultMaxPower,
+      constraintsQuery.data.defaultPreferenceWeight,
+    ].join('-')
+  }, [constraintsQuery.data])
+
+  const handleSubmit = (values: ScheduleFormValues) => {
+    scheduleMutation.mutate(values)
+  }
+
+  const handleSaveDefaults = (values: ScheduleFormValues) => {
+    updateConstraintsMutation.mutate({
+      defaultBatteryCapacity: values.batteryCapacity,
+      defaultMaxPower: values.maxPower,
+      defaultPreferenceWeight: values.costWeight,
+    })
+  }
+
+  const schedule = scheduleMutation.data ?? null
+
+  return (
+    <div className={cn('min-h-screen pb-10', showIntro && 'intro-active')}>
+      {showIntro ? (
+        <div className="intro-overlay" aria-hidden="true">
+          <div className="intro-overlay__ambient" />
+          <div className="intro-overlay__content">
+            <p className="intro-overlay__eyebrow">EV Dispatch Initializing</p>
+            <div className="intro-road">
+              <div className="intro-road__lane" />
+              <div className="intro-road__lane intro-road__lane--alt" />
+              <div className="intro-road__spark" />
+              <CarFront className="intro-road__car" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <StatusBanner result={schedule} />
+      <div className="mx-auto max-w-7xl px-4 pb-8 pt-5 sm:px-6 lg:px-8">
+        <header className="mb-5 rounded-lg border border-border/50 bg-card/80 p-5 shadow-soft backdrop-blur sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Intelligent EV Charging Scheduler
+              </p>
+              <h1 className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
+                Balance cost and sustainability with adaptive charging
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm text-muted-foreground sm:text-base">
+                Build a charging plan that targets your desired departure state of charge while optimizing spot prices and
+                carbon intensity.
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">Signed in as {user?.email}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-11 min-w-11 px-3"
+                onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Button type="button" variant="secondary" className="min-h-11" onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <ResponsiveDashboard
+          constraints={
+            <ScheduleForm
+              key={formKey}
+              onSubmit={handleSubmit}
+              onSaveDefaults={handleSaveDefaults}
+              initialValues={formDefaults}
+              isSubmitting={scheduleMutation.isPending}
+              isSavingDefaults={updateConstraintsMutation.isPending}
+            />
+          }
+          content={
+            <div className="space-y-4 sm:space-y-5">
+              <ResultsSummary result={schedule} isLoading={scheduleMutation.isPending} />
+              <ScheduleChart slots={schedule?.slots ?? []} isLoading={scheduleMutation.isPending} />
+
+              {scheduleMutation.error ? (
+                <Card className="border-warning/50 bg-warning/20">
+                  <CardContent className="flex items-start gap-3 p-4">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-foreground" />
+                    <div className="space-y-1 text-sm text-warning-foreground">
+                      <p className="font-semibold">Unable to build a charging schedule</p>
+                      <p>{scheduleMutation.error.message}</p>
+                      {scheduleMutation.error.status === 400 ? (
+                        <p className="font-medium">
+                          Validation error: verify your SoC targets, departure time, and zone constraints.
+                        </p>
+                      ) : null}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {updateConstraintsMutation.error ? (
+                <p className="text-sm text-destructive">Unable to save your default constraints right now.</p>
+              ) : null}
+
+              {updateConstraintsMutation.isSuccess ? (
+                <p className="text-sm text-primary">Default constraints saved successfully.</p>
+              ) : null}
+            </div>
+          }
+        />
+      </div>
+    </div>
+  )
+}
+
+export default SchedulerPage
