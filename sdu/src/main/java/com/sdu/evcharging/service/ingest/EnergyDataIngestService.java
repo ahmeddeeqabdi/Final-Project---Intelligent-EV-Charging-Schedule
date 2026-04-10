@@ -112,7 +112,7 @@ public class EnergyDataIngestService {
                 ? response.records() : List.of();
 
         log.info("Raw 15-min records from DayAheadPrices (zone={}, date={}):", zone, date);
-        raw.forEach(r -> log.info("  {} UTC -> {} DKK/MWh", r.timeUTC(), r.dayAheadPriceDKK()));
+        raw.forEach(r -> log.info("  {} UTC -> {} DKK/MWh", r.timeUTC(), r.effectivePriceDkk()));
 
         
         List<EdsSpotPriceRecord> hourly = aggregateToHourly(raw);
@@ -138,7 +138,7 @@ public class EnergyDataIngestService {
                 .map(entry -> {
                     List<EdsSpotPriceRecord> slots = entry.getValue();
                     double avgPriceDKK = slots.stream()
-                                                        .mapToDouble(r -> nullableDouble(r.dayAheadPriceDKK()))
+                            .mapToDouble(r -> nullableDouble(r.effectivePriceDkk()))
                             .average()
                             .orElse(0.0);
                     
@@ -146,7 +146,7 @@ public class EnergyDataIngestService {
                     String hourDk  = slots.get(0).timeDK() != null
                             ? slots.get(0).timeDK().substring(0, 13) + ":00:00"
                             : hourUtc;
-                    return new EdsSpotPriceRecord(hourUtc, hourDk, slots.get(0).priceArea(), avgPriceDKK);
+                                        return new EdsSpotPriceRecord(hourUtc, hourDk, slots.get(0).priceArea(), null, avgPriceDKK);
                 })
                 .collect(Collectors.toList());
     }
@@ -249,6 +249,7 @@ public class EnergyDataIngestService {
                             iso,
                             iso,
                             price.getPriceArea(),
+                            null,
                             price.getPriceDkkPerKwh() * 1000.0
                     );
                 })

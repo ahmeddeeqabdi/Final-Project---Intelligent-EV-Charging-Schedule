@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -38,20 +39,33 @@ public class DataSyncService {
         }
 
         int inserted = 0;
+        int updated = 0;
         for (com.sdu.evcharging.dto.ingest.EdsSpotPriceRecord record : records) {
             LocalDateTime hour = LocalDateTime.parse(record.timeUTC(), ISO_FORMAT);
-            if (!energyPriceRepository.existsByHourUtcAndPriceArea(hour, zone)) {
+            double priceDkkPerMwh = record.effectivePriceDkk() != null ? record.effectivePriceDkk() : 0.0;
+            double priceDkkPerKwh = priceDkkPerMwh / 1000.0;
+            Optional<EnergyPrice> existing = energyPriceRepository.findByHourUtcAndPriceArea(hour, zone);
+
+            if (existing.isEmpty()) {
                 energyPriceRepository.save(EnergyPrice.builder()
                         .hourUtc(hour)
                         .priceArea(zone)
-                        
-                        .priceDkkPerKwh(record.dayAheadPriceDKK() / 1000.0)
+                        .priceDkkPerKwh(priceDkkPerKwh)
                         .build());
                 inserted++;
+                continue;
+            }
+
+            EnergyPrice current = existing.get();
+            if (Math.abs(current.getPriceDkkPerKwh() - priceDkkPerKwh) > 1e-9) {
+                current.setPriceDkkPerKwh(priceDkkPerKwh);
+                energyPriceRepository.save(current);
+                updated++;
             }
         }
 
-        log.info("Spot price sync done: zone={} date={} fetched={} inserted={}", zone, date, records.size(), inserted);
+        log.info("Spot price sync done: zone={} date={} fetched={} inserted={} updated={}",
+                zone, date, records.size(), inserted, updated);
     }
 
     public void syncCO2Data(LocalDate date, String zone) {

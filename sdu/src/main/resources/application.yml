@@ -5,8 +5,8 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/mydatabase}
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -22,9 +22,9 @@ scheduling:
   enabled: true
 
 app:
-  security:
-    username: ${APP_SECURITY_USERNAME}
-    password: ${APP_SECURITY_PASSWORD}
+  jwt:
+    secret: ${APP_JWT_SECRET:this-is-a-development-only-secret-key-with-more-than-thirty-two-characters}
+    expiration-ms: ${APP_JWT_EXPIRATION_MS:3600000}
 
 resilience:
   eds:
@@ -34,3 +34,20 @@ resilience:
     permitted-half-open-calls: 3
     request-timeout-seconds: 8
     fallback-max-age-hours: 48
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:h2:mem:evcharging;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
