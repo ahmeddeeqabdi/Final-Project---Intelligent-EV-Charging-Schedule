@@ -42,6 +42,9 @@ public class UserConstraints {
     @Column(name = "default_preference_weight", nullable = false)
     private double defaultPreferenceWeight;
 
+    @Column(name = "price_area", nullable = false, length = 3)
+    private String priceArea;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 

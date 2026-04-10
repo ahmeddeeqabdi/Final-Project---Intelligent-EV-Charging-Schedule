@@ -105,10 +105,12 @@ export interface UserConstraints {
   defaultBatteryCapacity: number
   defaultMaxPower: number
   defaultPreferenceWeight: number
+  priceArea: PriceZone
 }
 
 export interface UpdateUserConstraintsRequest {
   defaultBatteryCapacity: number
   defaultMaxPower: number
   defaultPreferenceWeight: number
+  priceArea: PriceZone
 }

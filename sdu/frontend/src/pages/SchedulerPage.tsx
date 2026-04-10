@@ -63,6 +63,7 @@ function SchedulerPage() {
       batteryCapacity: constraintsQuery.data.defaultBatteryCapacity,
       maxPower: constraintsQuery.data.defaultMaxPower,
       costWeight: constraintsQuery.data.defaultPreferenceWeight,
+      priceZone: constraintsQuery.data.priceArea,
     }
   }, [constraintsQuery.data])
 
@@ -75,6 +76,7 @@ function SchedulerPage() {
       constraintsQuery.data.defaultBatteryCapacity,
       constraintsQuery.data.defaultMaxPower,
       constraintsQuery.data.defaultPreferenceWeight,
+      constraintsQuery.data.priceArea,
     ].join('-')
   }, [constraintsQuery.data])
 
@@ -87,6 +89,7 @@ function SchedulerPage() {
       defaultBatteryCapacity: values.batteryCapacity,
       defaultMaxPower: values.maxPower,
       defaultPreferenceWeight: values.costWeight,
+      priceArea: values.priceZone,
     })
   }
 

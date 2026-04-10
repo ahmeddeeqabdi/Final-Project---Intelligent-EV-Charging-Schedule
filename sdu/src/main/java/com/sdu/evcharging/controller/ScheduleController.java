@@ -37,7 +37,9 @@ public class ScheduleController {
             @RequestBody com.sdu.evcharging.dto.schedule.ScheduleRequest request,
             @RequestParam(defaultValue = "naive") String algorithm
     ) {
-        validateZone(request.priceZone());
+            if (request.priceZone() != null && !request.priceZone().isBlank()) {
+                validateZone(request.priceZone());
+            }
 
         log.info("POST /api/v1/schedule [algorithm={}] zone={} departure={}",
                 algorithm, request.priceZone(), request.departureTime());

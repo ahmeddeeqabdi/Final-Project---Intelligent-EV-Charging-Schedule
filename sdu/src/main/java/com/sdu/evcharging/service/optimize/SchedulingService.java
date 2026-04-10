@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -41,6 +42,8 @@ public class SchedulingService {
     private static final String PRICE_DEGRADE_REASON = "EDS API unavailable - serving cached historical prices";
     private static final String CO2_DEGRADE_REASON = "EDS API unavailable - serving cached historical CO2";
     private static final String CO2_MISSING_REASON = "CO2 data unavailable - using zero-default CO2 signal";
+    private static final Set<String> ALLOWED_ZONES = Set.of("DK1", "DK2");
+    private static final String DEFAULT_PRICE_AREA = "DK2";
 
     private final EnergyPriceRepository energyPriceRepository;
     private final CO2IntensityRepository co2IntensityRepository;
@@ -56,13 +59,15 @@ public class SchedulingService {
     public ScheduleResult createSchedule(ScheduleRequest request, String algorithm, Long userId) {
         Objects.requireNonNull(request, "request must not be null");
 
-        PriceSelection priceSelection = loadPriceData(request);
-        Co2Selection co2Selection = loadCo2Data(request);
+        ScheduleRequest effectiveRequest = resolvePriceArea(request, userId);
+
+        PriceSelection priceSelection = loadPriceData(effectiveRequest);
+        Co2Selection co2Selection = loadCo2Data(effectiveRequest);
 
         if (priceSelection.prices().isEmpty()) {
             throw new IllegalStateException(
-                    "No price data found for zone=" + request.priceZone()
-                    + " between " + request.plugInTime() + " and " + request.departureTime()
+                    "No price data found for zone=" + effectiveRequest.priceZone()
+                    + " between " + effectiveRequest.plugInTime() + " and " + effectiveRequest.departureTime()
                     + ". Trigger a data sync first or wait for API recovery."
             );
         }
@@ -70,11 +75,11 @@ public class SchedulingService {
         String strategyKey = normalizeStrategyKey(algorithm);
         ChargingStrategy strategy = resolveStrategy(strategyKey);
 
-        UserConstraints constraints = toConstraints(request);
+        UserConstraints constraints = toConstraints(effectiveRequest);
         List<GridData> priceData = toPriceData(priceSelection.prices());
         List<GridData> co2Data = toHourlyCo2Data(co2Selection.values());
 
-        log.info("Running [{}] scheduler for zone={}", strategyKey, request.priceZone());
+        log.info("Running [{}] scheduler for zone={}", strategyKey, effectiveRequest.priceZone());
         ScheduleResult base = strategy.solve(constraints, priceData, co2Data);
         ScheduleResult response = new ScheduleResult(
                 base.slots(),
@@ -87,6 +92,46 @@ public class SchedulingService {
             persistSchedule(userId, strategyKey, response);
         }
         return response;
+    }
+
+    private ScheduleRequest resolvePriceArea(ScheduleRequest request, Long userId) {
+        String zone = normalizeZone(request.priceZone());
+
+        if (zone == null) {
+            if (userId == null) {
+                throw new IllegalArgumentException("Zone must be DK1 or DK2");
+            }
+
+            zone = userRepository.findById(userId)
+                    .map(User::getConstraints)
+                    .map(com.sdu.evcharging.domain.UserConstraints::getPriceArea)
+                    .map(SchedulingService::normalizeZone)
+                    .orElse(DEFAULT_PRICE_AREA);
+        }
+
+        return new ScheduleRequest(
+                request.currentSocPercent(),
+                request.targetSocPercent(),
+                request.batteryCapacityKwh(),
+                request.maxChargingPowerKw(),
+                request.plugInTime(),
+                request.departureTime(),
+                zone,
+                request.weightPrice(),
+                request.weightCO2()
+        );
+    }
+
+    private static String normalizeZone(String zone) {
+        if (zone == null || zone.isBlank()) {
+            return null;
+        }
+
+        String normalized = zone.trim().toUpperCase();
+        if (!ALLOWED_ZONES.contains(normalized)) {
+            throw new IllegalArgumentException("Zone must be DK1 or DK2");
+        }
+        return normalized;
     }
 
         private void persistSchedule(Long userId, String algorithm, ScheduleResult result) {
@@ -246,9 +291,13 @@ public class SchedulingService {
 
         String reason = priceMode.reason() + " | " + co2Mode.reason();
         String source = priceMode.source() + "+" + co2Mode.source();
+        Long priceAgeHours = priceMode.dataAgeHours();
+        Long co2AgeHours = co2Mode.dataAgeHours();
+        long safePriceAgeHours = priceAgeHours != null ? priceAgeHours : 0L;
+        long safeCo2AgeHours = co2AgeHours != null ? co2AgeHours : 0L;
         long dataAgeHours = Math.max(
-                priceMode.dataAgeHours() == null ? 0L : priceMode.dataAgeHours(),
-                co2Mode.dataAgeHours() == null ? 0L : co2Mode.dataAgeHours()
+            safePriceAgeHours,
+            safeCo2AgeHours
         );
 
         return ScheduleResult.DegradedMode.degraded(reason, source, dataAgeHours);

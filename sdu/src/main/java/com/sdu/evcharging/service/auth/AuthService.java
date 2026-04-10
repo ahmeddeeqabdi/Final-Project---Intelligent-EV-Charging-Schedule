@@ -23,6 +23,7 @@ public class AuthService {
     private static final double DEFAULT_BATTERY_CAPACITY = 77.0;
     private static final double DEFAULT_MAX_POWER = 11.0;
     private static final double DEFAULT_PREFERENCE_WEIGHT = 0.5;
+    private static final String DEFAULT_PRICE_AREA = "DK2";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -47,6 +48,7 @@ public class AuthService {
                 .defaultBatteryCapacity(DEFAULT_BATTERY_CAPACITY)
                 .defaultMaxPower(DEFAULT_MAX_POWER)
                 .defaultPreferenceWeight(DEFAULT_PREFERENCE_WEIGHT)
+            .priceArea(DEFAULT_PRICE_AREA)
                 .build());
 
         User savedUser = userRepository.save(user);
