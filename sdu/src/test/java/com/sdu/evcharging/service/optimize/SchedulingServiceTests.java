@@ -111,6 +111,28 @@ class SchedulingServiceTests {
         verify(mockStrategy).solve(any(), any(), any());
     }
 
+    @Test
+    void createSchedule_OptimalAlgorithm_UsesOptimalStrategy() {
+        EnergyPrice price1 = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
+        CO2Intensity co21 = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
+        ScheduleResult expectedResult = new ScheduleResult(List.of(), 9.0, 90.0);
+
+        when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
+                "DK1", plugInTime, departureTime)).thenReturn(List.of(price1));
+        when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
+            "DK1", plugInTime, departureTime)).thenReturn(List.of(co21));
+
+        when(strategies.get("optimal")).thenReturn(mockStrategy);
+        when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
+                .thenReturn(expectedResult);
+
+        ScheduleResult actualResult = schedulingService.createSchedule(request, "optimal");
+
+        assertEquals(expectedResult.totalPredictedCost(), actualResult.totalPredictedCost());
+        assertEquals(expectedResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
+        verify(mockStrategy).solve(any(), any(), any());
+    }
+
         @Test
         void createSchedule_UsesCachedHistoricalPrices_WhenRequestedWindowMissing() {
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(

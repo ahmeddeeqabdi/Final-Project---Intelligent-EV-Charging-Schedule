@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
-import { type PriceZone, type ScheduleFormValues } from '@/types/api'
+import { type OptimizationAlgorithm, type PriceZone, type ScheduleFormValues } from '@/types/api'
 
 interface ScheduleFormProps {
   onSubmit: (values: ScheduleFormValues) => void
@@ -165,10 +165,11 @@ export function ScheduleForm({
                 className="flex min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={values.algorithm}
                 onChange={(event) =>
-                  updateValue('algorithm', event.target.value === 'naive' ? 'naive' : 'greedy')
+                  updateValue('algorithm', event.target.value as OptimizationAlgorithm)
                 }
               >
                 <option value="greedy">Greedy</option>
+                <option value="optimal">Optimal (DP)</option>
                 <option value="naive">Naive</option>
               </select>
             </div>
