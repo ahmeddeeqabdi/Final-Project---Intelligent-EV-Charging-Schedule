@@ -14,6 +14,10 @@ spring:
       ddl-auto: update
     show-sql: false
 
+  sql:
+    init:
+      mode: always
+
 energidataservice:
   base-url: https://api.energidataservice.dk
   default-zone: DK2

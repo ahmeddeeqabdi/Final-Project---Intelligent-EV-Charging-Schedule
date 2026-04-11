@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -206,7 +207,9 @@ public class SchedulingService {
                 request.departureTime()
         );
 
-        if (!live.isEmpty()) {
+        int requestedSlots = requestedHourSlots(request);
+        Map<LocalDateTime, Double> hourly = toHourlyAveragesByHour(live);
+        if (hasFullCoverage(hourly, request, requestedSlots)) {
             return new Co2Selection(live, ScheduleResult.DegradedMode.live());
         }
 
@@ -225,7 +228,8 @@ public class SchedulingService {
                 request.plugInTime(),
                 request.departureTime()
         );
-        if (!refreshed.isEmpty()) {
+        Map<LocalDateTime, Double> refreshedHourly = toHourlyAveragesByHour(refreshed);
+        if (hasFullCoverage(refreshedHourly, request, requestedSlots)) {
             return new Co2Selection(refreshed, ScheduleResult.DegradedMode.live());
         }
 
@@ -246,11 +250,26 @@ public class SchedulingService {
                         );
                     }
 
+                            Map<LocalDateTime, Double> sourceHourly = toHourlyAveragesByHour(sourceDay);
+                            if (sourceHourly.isEmpty()) {
+                            return new Co2Selection(
+                                List.of(),
+                                ScheduleResult.DegradedMode.degraded(CO2_MISSING_REASON, "co2-unavailable", 0)
+                            );
+                            }
+
+                            List<CO2Intensity> completed = completeCo2Window(
+                                request,
+                                refreshedHourly,
+                                sourceHourly,
+                                requestedSlots
+                            );
+
                     long dataAgeHours = Math.max(0L, Duration.between(latest.getTimestampUtc(), request.plugInTime()).toHours());
                     log.warn("Serving cached historical CO2 in fallback mode [zone={}] sourceDay={}",
                             request.priceZone(), sourceDayStart.toLocalDate());
                     return new Co2Selection(
-                            shiftCo2SeriesIntoRequestedWindow(sourceDay, request),
+                                completed,
                             ScheduleResult.DegradedMode.degraded(CO2_DEGRADE_REASON, "cached-historical-co2", dataAgeHours)
                     );
                 })
@@ -273,6 +292,65 @@ public class SchedulingService {
             dates.add(day);
         }
         return dates;
+    }
+
+    private static int requestedHourSlots(ScheduleRequest request) {
+        long slotsInWindow = Duration.between(request.plugInTime(), request.departureTime()).toHours();
+        return Math.max(1, (int) slotsInWindow);
+    }
+
+    private static boolean hasFullCoverage(Map<LocalDateTime, Double> hourly, ScheduleRequest request, int slots) {
+        if (hourly.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < slots; i++) {
+            LocalDateTime slotTime = request.plugInTime().plusHours(i).withMinute(0).withSecond(0).withNano(0);
+            if (!hourly.containsKey(slotTime)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Map<LocalDateTime, Double> toHourlyAveragesByHour(List<CO2Intensity> series) {
+        if (series == null || series.isEmpty()) {
+            return Map.of();
+        }
+
+        return series.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getTimestampUtc().withMinute(0).withSecond(0).withNano(0),
+                        Collectors.averagingDouble(CO2Intensity::getGPerKwh)
+                ));
+    }
+
+    private static List<CO2Intensity> completeCo2Window(
+            ScheduleRequest request,
+            Map<LocalDateTime, Double> liveHourly,
+            Map<LocalDateTime, Double> sourceHourly,
+            int slots
+    ) {
+        List<Map.Entry<LocalDateTime, Double>> sourcePattern = sourceHourly.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .toList();
+
+        List<CO2Intensity> completed = new ArrayList<>(slots);
+        for (int i = 0; i < slots; i++) {
+            LocalDateTime slotTime = request.plugInTime().plusHours(i).withMinute(0).withSecond(0).withNano(0);
+            Double value = liveHourly.get(slotTime);
+            if (value == null) {
+                value = sourcePattern.get(i % sourcePattern.size()).getValue();
+            }
+
+            completed.add(CO2Intensity.builder()
+                    .timestampUtc(slotTime)
+                    .priceArea(request.priceZone())
+                    .gPerKwh(value)
+                    .build());
+        }
+
+        return completed;
     }
 
     private static ScheduleResult.DegradedMode mergeDegradedMode(
@@ -384,7 +462,11 @@ public class SchedulingService {
         }
 
         Map<LocalDateTime, List<CO2Intensity>> byHour = co2Series.stream()
-                .collect(Collectors.groupingBy(i -> i.getTimestampUtc().withMinute(0).withSecond(0).withNano(0)));
+            .collect(Collectors.groupingBy(
+                i -> i.getTimestampUtc().withMinute(0).withSecond(0).withNano(0),
+                LinkedHashMap::new,
+                Collectors.toList()
+            ));
 
         List<GridData> hourly = new ArrayList<>(byHour.size());
         for (Map.Entry<LocalDateTime, List<CO2Intensity>> entry : byHour.entrySet()) {
