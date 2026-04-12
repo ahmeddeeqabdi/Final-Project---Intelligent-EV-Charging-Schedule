@@ -12,7 +12,7 @@ import com.sdu.evcharging.domain.strategy.UserConstraints;
 import com.sdu.evcharging.dto.schedule.ChargingSlot;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
-class NaiveSchedulerTests {
+class NaiveChargingStrategyTests {
 
     @Test
     void solve_ChargesImmediatelyUntilFull() {
@@ -93,16 +93,16 @@ class NaiveSchedulerTests {
         );
 
         List<GridData> priceData = List.of(
-                new GridData(plugIn.minusHours(1), 0.10), 
-                new GridData(plugIn, 0.20),               
-                new GridData(plugIn.plusHours(1), 0.30),  
-                new GridData(plugIn.plusHours(2), 0.40)   
+                new GridData(plugIn.minusHours(1), 0.10),
+                new GridData(plugIn, 0.20),
+                new GridData(plugIn.plusHours(1), 0.30),
+                new GridData(plugIn.plusHours(2), 0.40)
         );
 
         ScheduleResult result = scheduler.solve(constraints, priceData, null);
 
-                assertEquals(1, result.slots().size());
-                assertEquals(plugIn, result.slots().get(0).timestamp());
-                assertEquals(4.0, result.slots().get(0).powerDraw(), 1e-9);
+        assertEquals(1, result.slots().size());
+        assertEquals(plugIn, result.slots().get(0).timestamp());
+        assertEquals(4.0, result.slots().get(0).powerDraw(), 1e-9);
     }
 }

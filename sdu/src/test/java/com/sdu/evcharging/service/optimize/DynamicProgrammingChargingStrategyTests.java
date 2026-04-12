@@ -13,7 +13,7 @@ import com.sdu.evcharging.domain.strategy.GridData;
 import com.sdu.evcharging.domain.strategy.UserConstraints;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
-class DynamicProgrammingOptimizerTests {
+class DynamicProgrammingChargingStrategyTests {
 
     @Test
     void solve_ProducesExactEnergyAndRespectsWindow() {

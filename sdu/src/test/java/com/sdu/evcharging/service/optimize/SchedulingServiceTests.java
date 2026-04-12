@@ -60,23 +60,23 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_ValidInput_ReturnsSchedule() {
-        EnergyPrice price1 = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
-        CO2Intensity co21 = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
-        ScheduleResult expectedResult = new ScheduleResult(List.of(), 10.0, 100.0);
+        EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
+        CO2Intensity co2AtPlugIn = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
+        ScheduleResult expectedScheduleResult = new ScheduleResult(List.of(), 10.0, 100.0);
 
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
-                "DK1", plugInTime, departureTime)).thenReturn(List.of(price1));
+            "DK1", plugInTime, departureTime)).thenReturn(List.of(priceAtPlugIn));
         when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
-                "DK1", plugInTime, departureTime)).thenReturn(List.of(co21));
+            "DK1", plugInTime, departureTime)).thenReturn(List.of(co2AtPlugIn));
         
         when(strategies.get("greedy")).thenReturn(mockStrategy);
         when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
-                .thenReturn(expectedResult);
+            .thenReturn(expectedScheduleResult);
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "greedy");
 
-        assertEquals(expectedResult.totalPredictedCost(), actualResult.totalPredictedCost());
-        assertEquals(expectedResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
+        assertEquals(expectedScheduleResult.totalPredictedCost(), actualResult.totalPredictedCost());
+        assertEquals(expectedScheduleResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
         assertTrue(actualResult.degradedMode().enabled());
         assertEquals("co2-unavailable", actualResult.degradedMode().source());
         verify(mockStrategy).solve(any(), any(), any());
@@ -97,21 +97,21 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_InvalidAlgorithm_FallsBackToNaive() {
-        EnergyPrice price1 = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
-        ScheduleResult expectedResult = new ScheduleResult(List.of(), 50.0, 200.0);
+        EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
+        ScheduleResult expectedScheduleResult = new ScheduleResult(List.of(), 50.0, 200.0);
 
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
-                "DK1", plugInTime, departureTime)).thenReturn(List.of(price1));
+            "DK1", plugInTime, departureTime)).thenReturn(List.of(priceAtPlugIn));
         
         when(strategies.get("non-existent")).thenReturn(null);
         when(strategies.get("naive")).thenReturn(mockStrategy);
         when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
-                .thenReturn(expectedResult);
+            .thenReturn(expectedScheduleResult);
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "non-existent");
 
-        assertEquals(expectedResult.totalPredictedCost(), actualResult.totalPredictedCost());
-        assertEquals(expectedResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
+        assertEquals(expectedScheduleResult.totalPredictedCost(), actualResult.totalPredictedCost());
+        assertEquals(expectedScheduleResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
         assertTrue(actualResult.degradedMode().enabled());
         assertEquals("co2-unavailable", actualResult.degradedMode().source());
         verify(mockStrategy).solve(any(), any(), any());
@@ -119,23 +119,23 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_OptimalAlgorithm_UsesOptimalStrategy() {
-        EnergyPrice price1 = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
-        CO2Intensity co21 = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
-        ScheduleResult expectedResult = new ScheduleResult(List.of(), 9.0, 90.0);
+        EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
+        CO2Intensity co2AtPlugIn = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
+        ScheduleResult expectedScheduleResult = new ScheduleResult(List.of(), 9.0, 90.0);
 
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
-                "DK1", plugInTime, departureTime)).thenReturn(List.of(price1));
+                "DK1", plugInTime, departureTime)).thenReturn(List.of(priceAtPlugIn));
         when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
-            "DK1", plugInTime, departureTime)).thenReturn(List.of(co21));
+            "DK1", plugInTime, departureTime)).thenReturn(List.of(co2AtPlugIn));
 
         when(strategies.get("optimal")).thenReturn(mockStrategy);
         when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
-                .thenReturn(expectedResult);
+            .thenReturn(expectedScheduleResult);
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "optimal");
 
-        assertEquals(expectedResult.totalPredictedCost(), actualResult.totalPredictedCost());
-        assertEquals(expectedResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
+        assertEquals(expectedScheduleResult.totalPredictedCost(), actualResult.totalPredictedCost());
+        assertEquals(expectedScheduleResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
         verify(mockStrategy).solve(any(), any(), any());
     }
 
@@ -172,10 +172,10 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_NoStrategiesAvailable_ThrowsException() {
-        EnergyPrice price1 = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
+        EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
 
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
-                "DK1", plugInTime, departureTime)).thenReturn(List.of(price1));
+            "DK1", plugInTime, departureTime)).thenReturn(List.of(priceAtPlugIn));
         
         when(strategies.get("greedy")).thenReturn(null);
         when(strategies.get("naive")).thenReturn(null);
