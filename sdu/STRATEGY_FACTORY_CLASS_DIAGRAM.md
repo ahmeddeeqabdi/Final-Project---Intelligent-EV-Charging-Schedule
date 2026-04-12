@@ -33,13 +33,18 @@ class ChargingStrategy {
   +solve(constraints, priceData, co2Data) ScheduleResult
 }
 
-class NaiveScheduler {
+class NaiveChargingStrategy {
   <<Component("naive")>>
   +solve(constraints, priceData, co2Data) ScheduleResult
 }
 
 class GreedyChargingStrategy {
   <<Component("greedy")>>
+  +solve(constraints, priceData, co2Data) ScheduleResult
+}
+
+class DynamicProgrammingChargingStrategy {
+  <<Component("optimal")>>
   +solve(constraints, priceData, co2Data) ScheduleResult
 }
 
@@ -91,12 +96,13 @@ SchedulingService ..> GridData : transforms repository data
 SchedulingService ..> ScheduleRequest : input
 SchedulingService ..> ScheduleResult : output
 
-ChargingStrategy <|.. NaiveScheduler : implements
+ChargingStrategy <|.. NaiveChargingStrategy : implements
 ChargingStrategy <|.. GreedyChargingStrategy : implements
+ChargingStrategy <|.. DynamicProgrammingChargingStrategy : implements
 
 note for SchedulingService "Factory role:\nresolveStrategy(key) fetches from Map<String, ChargingStrategy>\ninjected by Spring from @Component bean names."
 ```
 
 ## OCP proof point
 
-`SchedulingService` depends on `ChargingStrategy` abstraction, not concrete algorithms. A new algorithm (for example, `BalancedChargingStrategy`) can be added by implementing `ChargingStrategy` and registering it as a Spring component key, without changing core scheduling flow in `createSchedule(...)`.
+`SchedulingService` depends on `ChargingStrategy` abstraction, not concrete algorithms. The current codebase already has three interchangeable implementations (`naive`, `greedy`, `optimal`). A future 4th algorithm (for example, `BalancedChargingStrategy`) can be added by implementing `ChargingStrategy` and registering it as a Spring component key, without changing core scheduling flow in `createSchedule(...)`.

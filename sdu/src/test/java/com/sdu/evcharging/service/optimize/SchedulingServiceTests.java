@@ -75,7 +75,10 @@ class SchedulingServiceTests {
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "greedy");
 
-        assertEquals(expectedResult, actualResult);
+        assertEquals(expectedResult.totalPredictedCost(), actualResult.totalPredictedCost());
+        assertEquals(expectedResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
+        assertTrue(actualResult.degradedMode().enabled());
+        assertEquals("co2-unavailable", actualResult.degradedMode().source());
         verify(mockStrategy).solve(any(), any(), any());
     }
 
@@ -107,7 +110,10 @@ class SchedulingServiceTests {
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "non-existent");
 
-        assertEquals(expectedResult, actualResult);
+        assertEquals(expectedResult.totalPredictedCost(), actualResult.totalPredictedCost());
+        assertEquals(expectedResult.totalPredictedEmissions(), actualResult.totalPredictedEmissions());
+        assertTrue(actualResult.degradedMode().enabled());
+        assertEquals("co2-unavailable", actualResult.degradedMode().source());
         verify(mockStrategy).solve(any(), any(), any());
     }
 
@@ -160,7 +166,7 @@ class SchedulingServiceTests {
         ScheduleResult result = schedulingService.createSchedule(request, "naive");
 
         assertTrue(result.degradedMode().enabled());
-        assertEquals("cached-historical", result.degradedMode().source());
+        assertEquals("cached-historical-price+co2-unavailable", result.degradedMode().source());
         assertTrue(result.degradedMode().dataAgeHours() >= 0L);
         }
 

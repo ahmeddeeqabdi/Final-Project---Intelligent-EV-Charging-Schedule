@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component("naive")
 @Slf4j
-public class NaiveScheduler implements ChargingStrategy {
+public class NaiveChargingStrategy implements ChargingStrategy {
 
     private static final double ENERGY_TOLERANCE = 1e-3;
     private static final double DEFAULT_CO2_VALUE = 0.0;
@@ -40,12 +40,12 @@ public class NaiveScheduler implements ChargingStrategy {
             List<GridData> co2Data
     ) {
         if (priceData == null || priceData.isEmpty()) {
-            log.info("[NaiveScheduler] No price data available. Returning empty schedule.");
+            log.info("[NaiveChargingStrategy] No price data available. Returning empty schedule.");
             return new ScheduleResult(List.of(), 0.0, 0.0);
         }
 
         double energyNeededKwh = constraints.energyRequiredKwh();
-        log.info("[NaiveScheduler] Energy required: {} kWh over {} slots",
+        log.info("[NaiveChargingStrategy] Energy required: {} kWh over {} slots",
                 energyNeededKwh, priceData.size());
 
         if (energyNeededKwh <= ENERGY_TOLERANCE) {
@@ -80,7 +80,7 @@ public class NaiveScheduler implements ChargingStrategy {
         }
 
         if (remainingKwh > ENERGY_TOLERANCE) {
-            log.warn("[NaiveScheduler] Could not fulfil full requirement. {} kWh unscheduled - time window too short?",
+            log.warn("[NaiveChargingStrategy] Could not fulfil full requirement. {} kWh unscheduled - time window too short?",
                     remainingKwh);
         }
 
@@ -89,7 +89,7 @@ public class NaiveScheduler implements ChargingStrategy {
         double totalCost = calculateTotalCost(slots);
         double totalEmissions = calculateTotalEmissions(slots);
 
-        log.info("[NaiveScheduler] Schedule complete: {} slots, {} DKK estimated cost", slots.size(), totalCost);
+        log.info("[NaiveChargingStrategy] Schedule complete: {} slots, {} DKK estimated cost", slots.size(), totalCost);
 
         return new ScheduleResult(slots, totalCost, totalEmissions);
     }

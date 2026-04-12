@@ -17,7 +17,7 @@ class DynamicProgrammingOptimizerTests {
 
     @Test
     void solve_ProducesExactEnergyAndRespectsWindow() {
-        DynamicProgrammingOptimizer optimizer = new DynamicProgrammingOptimizer();
+        DynamicProgrammingChargingStrategy optimizer = new DynamicProgrammingChargingStrategy();
 
         LocalDateTime t0 = LocalDateTime.of(2026, 4, 11, 8, 0);
         LocalDateTime t1 = t0.plusHours(1);
@@ -64,7 +64,7 @@ class DynamicProgrammingOptimizerTests {
 
     @Test
     void solve_WhenCo2WeightDominates_SelectsLowerCo2Slot() {
-        DynamicProgrammingOptimizer optimizer = new DynamicProgrammingOptimizer();
+        DynamicProgrammingChargingStrategy optimizer = new DynamicProgrammingChargingStrategy();
 
         LocalDateTime t1 = LocalDateTime.of(2026, 4, 11, 10, 0);
         LocalDateTime t2 = t1.plusHours(1);
@@ -100,7 +100,7 @@ class DynamicProgrammingOptimizerTests {
 
     @Test
     void solve_ThrowsWhenEnergyIsNotRepresentableByStepSize() {
-        DynamicProgrammingOptimizer optimizer = new DynamicProgrammingOptimizer();
+        DynamicProgrammingChargingStrategy optimizer = new DynamicProgrammingChargingStrategy();
 
         LocalDateTime t1 = LocalDateTime.of(2026, 4, 11, 10, 0);
         UserConstraints constraints = new UserConstraints(
@@ -123,7 +123,7 @@ class DynamicProgrammingOptimizerTests {
 
     @Test
     void solve_ThrowsWhenStateSpaceExceedsSafetyLimit() {
-        DynamicProgrammingOptimizer optimizer = new DynamicProgrammingOptimizer();
+        DynamicProgrammingChargingStrategy optimizer = new DynamicProgrammingChargingStrategy();
 
         LocalDateTime start = LocalDateTime.of(2026, 4, 11, 0, 0);
         List<GridData> prices = IntStream.range(0, 500)
@@ -150,7 +150,7 @@ class DynamicProgrammingOptimizerTests {
 
     @Test
     void solve_HasObjectiveValueLessThanOrEqualToGreedyForPriceOnlyObjective() {
-        DynamicProgrammingOptimizer optimal = new DynamicProgrammingOptimizer();
+        DynamicProgrammingChargingStrategy optimal = new DynamicProgrammingChargingStrategy();
         GreedyChargingStrategy greedy = new GreedyChargingStrategy();
 
         LocalDateTime t1 = LocalDateTime.of(2026, 4, 11, 12, 0);

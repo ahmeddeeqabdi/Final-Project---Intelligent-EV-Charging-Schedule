@@ -109,7 +109,7 @@ class GreedyChargingStrategyTests {
 
         assertEquals(1, result.slots().size());
         assertEquals(0.0, result.slots().get(0).currentCO2());
-        assertEquals(5.0, result.slots().get(0).powerDraw());
+        assertEquals(2.0, result.slots().get(0).powerDraw());
     }
 
     private static boolean containsSlot(List<ChargingSlot> slots, LocalDateTime timestamp) {

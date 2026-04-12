@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component("optimal")
 @Slf4j
-public class DynamicProgrammingOptimizer implements ChargingStrategy {
+public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
 
     private static final double ENERGY_TOLERANCE = 1e-3;
     private static final double REPRESENTABILITY_TOLERANCE = 1e-9;
@@ -113,7 +113,7 @@ public class DynamicProgrammingOptimizer implements ChargingStrategy {
                             + "Reduce the charging window/energy target or use greedy."
             );
         }
-        log.info("[DynamicProgrammingOptimizer] Solving DP with {} slots and {} energy steps ({} states)",
+        log.info("[DynamicProgrammingChargingStrategy] Solving DP with {} slots and {} energy steps ({} states)",
                 numSlots, totalSteps, states);
     }
 

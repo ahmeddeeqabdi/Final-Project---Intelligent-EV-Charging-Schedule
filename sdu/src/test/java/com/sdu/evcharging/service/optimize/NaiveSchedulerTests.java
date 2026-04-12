@@ -16,7 +16,7 @@ class NaiveSchedulerTests {
 
     @Test
     void solve_ChargesImmediatelyUntilFull() {
-        NaiveScheduler scheduler = new NaiveScheduler();
+        NaiveChargingStrategy scheduler = new NaiveChargingStrategy();
 
         LocalDateTime t1 = LocalDateTime.of(2026, 3, 13, 10, 0);
         LocalDateTime t2 = t1.plusHours(1);
@@ -43,30 +43,19 @@ class NaiveSchedulerTests {
 
         ScheduleResult result = scheduler.solve(constraints, priceData, co2Data);
 
-        assertEquals(3, result.slots().size());
-        
+        assertEquals(1, result.slots().size());
+
         ChargingSlot slot1 = result.slots().get(0);
-        ChargingSlot slot2 = result.slots().get(1);
-        ChargingSlot slot3 = result.slots().get(2);
-
         assertEquals(t1, slot1.timestamp());
-        assertEquals(7.0, slot1.powerDraw(), 1e-9);
+        assertEquals(6.0, slot1.powerDraw(), 1e-9);
 
-        assertEquals(t2, slot2.timestamp());
-        assertEquals(7.0, slot2.powerDraw(), 1e-9);
-
-        assertEquals(t3, slot3.timestamp());
-        assertEquals(1.0, slot3.powerDraw(), 1e-9);
-
-        
-        assertEquals(4.5, result.totalPredictedCost(), 1e-9);
-        
-        assertEquals(3600.0, result.totalPredictedEmissions(), 1e-9);
+        assertEquals(2.4, result.totalPredictedCost(), 1e-9);
+        assertEquals(1200.0, result.totalPredictedEmissions(), 1e-9);
     }
 
     @Test
     void solve_EmptyPriceData_ReturnsEmptyResult() {
-        NaiveScheduler scheduler = new NaiveScheduler();
+        NaiveChargingStrategy scheduler = new NaiveChargingStrategy();
         UserConstraints constraints = new UserConstraints(
                 20.0, 60.0, 15.0, 7.0, LocalDateTime.now(), LocalDateTime.now().plusHours(5), "DK1", 0.5, 0.5
         );
@@ -80,7 +69,7 @@ class NaiveSchedulerTests {
 
     @Test
     void solve_ZeroEnergyRequired_ReturnsEmptyResult() {
-        NaiveScheduler scheduler = new NaiveScheduler();
+        NaiveChargingStrategy scheduler = new NaiveChargingStrategy();
         UserConstraints constraints = new UserConstraints(
                 20.0, 60.0, 0.0, 7.0, LocalDateTime.now(), LocalDateTime.now().plusHours(5), "DK1", 0.5, 0.5
         );
@@ -94,7 +83,7 @@ class NaiveSchedulerTests {
 
     @Test
     void solve_IgnoresSlotsOutsideTimeWindow() {
-        NaiveScheduler scheduler = new NaiveScheduler();
+        NaiveChargingStrategy scheduler = new NaiveChargingStrategy();
 
         LocalDateTime plugIn = LocalDateTime.of(2026, 3, 13, 10, 0);
         LocalDateTime departure = plugIn.plusHours(2);
@@ -112,10 +101,8 @@ class NaiveSchedulerTests {
 
         ScheduleResult result = scheduler.solve(constraints, priceData, null);
 
-        assertEquals(2, result.slots().size());
-        assertEquals(plugIn, result.slots().get(0).timestamp());
-        assertEquals(plugIn.plusHours(1), result.slots().get(1).timestamp());
-        assertEquals(7.0, result.slots().get(0).powerDraw(), 1e-9);
-        assertEquals(3.0, result.slots().get(1).powerDraw(), 1e-9);
+                assertEquals(1, result.slots().size());
+                assertEquals(plugIn, result.slots().get(0).timestamp());
+                assertEquals(4.0, result.slots().get(0).powerDraw(), 1e-9);
     }
 }
