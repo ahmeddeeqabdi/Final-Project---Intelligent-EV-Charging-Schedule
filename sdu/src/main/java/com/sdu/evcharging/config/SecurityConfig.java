@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/schedule/sync").hasRole("ADMIN")
                         .requestMatchers("/api/v1/**").authenticated()
                 .requestMatchers("/api/user/me/**").authenticated()

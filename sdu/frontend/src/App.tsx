@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import AdminPage from '@/pages/AdminPage'
 import { LoginPage } from '@/pages/LoginPage'
 import SchedulerPage from '@/pages/SchedulerPage'
 import { SignupPage } from '@/pages/SignupPage'
@@ -22,6 +23,14 @@ function App() {
         element={
           <ProtectedRoute>
             <SchedulerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredRole="ADMIN">
+            <AdminPage />
           </ProtectedRoute>
         }
       />
