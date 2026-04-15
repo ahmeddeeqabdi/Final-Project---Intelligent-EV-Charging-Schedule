@@ -60,6 +60,11 @@ const mapBackendToUi = (payload: BackendScheduleResult): ScheduleResult => {
       energyPrice: slot.currentPrice,
       co2Intensity: slot.currentCO2,
     })),
+    marketSignals: (payload.marketSignals ?? []).map((point) => ({
+      timestamp: point.timestamp,
+      energyPrice: point.energyPrice,
+      co2Intensity: point.co2Intensity,
+    })),
   }
 }
 

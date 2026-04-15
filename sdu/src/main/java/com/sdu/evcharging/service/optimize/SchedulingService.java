@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -79,6 +80,7 @@ public class SchedulingService {
         UserConstraints constraints = toConstraints(effectiveRequest);
         List<GridData> priceData = toPriceData(priceSelection.prices());
         List<GridData> co2Data = toHourlyCo2Data(co2Selection.values());
+        List<ScheduleResult.MarketSignal> marketSignals = buildMarketSignals(effectiveRequest, priceData, co2Data);
 
         log.info("Running [{}] scheduler for zone={}", strategyKey, effectiveRequest.priceZone());
         ScheduleResult base = strategy.solve(constraints, priceData, co2Data);
@@ -86,7 +88,8 @@ public class SchedulingService {
                 base.slots(),
                 base.totalPredictedCost(),
                 base.totalPredictedEmissions(),
-            mergeDegradedMode(priceSelection.degradedMode(), co2Selection.degradedMode())
+                mergeDegradedMode(priceSelection.degradedMode(), co2Selection.degradedMode()),
+                marketSignals
         );
 
         if (userId != null) {
@@ -421,6 +424,31 @@ public class SchedulingService {
                 .map(price -> new GridData(price.getHourUtc(), price.getPriceDkkPerKwh()))
                 .toList();
     }
+
+        private static List<ScheduleResult.MarketSignal> buildMarketSignals(
+            ScheduleRequest request,
+            List<GridData> priceData,
+            List<GridData> co2Data
+        ) {
+        Map<LocalDateTime, Double> priceByTime = priceData.stream()
+            .collect(Collectors.toMap(GridData::timestamp, GridData::value, (left, _right) -> left));
+        Map<LocalDateTime, Double> co2ByTime = co2Data.stream()
+            .collect(Collectors.toMap(GridData::timestamp, GridData::value, (left, _right) -> left));
+
+        TreeSet<LocalDateTime> timestamps = new TreeSet<>();
+        timestamps.addAll(priceByTime.keySet());
+        timestamps.addAll(co2ByTime.keySet());
+
+        return timestamps.stream()
+            .filter(timestamp -> !timestamp.isBefore(request.plugInTime()))
+            .filter(timestamp -> timestamp.isBefore(request.departureTime()))
+            .map(timestamp -> new ScheduleResult.MarketSignal(
+                timestamp,
+                priceByTime.get(timestamp),
+                co2ByTime.get(timestamp)
+            ))
+            .toList();
+        }
 
     private static List<EnergyPrice> shiftPriceSeriesIntoRequestedWindow(List<EnergyPrice> sourceDay, ScheduleRequest request) {
         long slotsInWindow = Duration.between(request.plugInTime(), request.departureTime()).toHours();

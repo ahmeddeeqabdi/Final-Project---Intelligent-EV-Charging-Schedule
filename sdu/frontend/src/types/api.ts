@@ -17,6 +17,12 @@ export interface ScheduledSlot {
   co2Intensity: number
 }
 
+export interface MarketSignalPoint {
+  timestamp: string
+  energyPrice: number | null
+  co2Intensity: number | null
+}
+
 export interface ScheduleResult {
   totalCost: number
   totalCO2: number
@@ -25,6 +31,7 @@ export interface ScheduleResult {
   fallbackReason?: string
   fallbackDataAgeHours?: number
   slots: ScheduledSlot[]
+  marketSignals: MarketSignalPoint[]
 }
 
 export interface ScheduleFormValues extends ScheduleRequest {
@@ -52,6 +59,12 @@ export interface BackendChargingSlot {
   currentCO2: number
 }
 
+export interface BackendMarketSignalPoint {
+  timestamp: string
+  energyPrice: number | null
+  co2Intensity: number | null
+}
+
 export interface BackendDegradedMode {
   enabled: boolean
   reason: string | null
@@ -64,6 +77,7 @@ export interface BackendScheduleResult {
   totalPredictedCost: number
   totalPredictedEmissions: number
   degradedMode: BackendDegradedMode
+  marketSignals?: BackendMarketSignalPoint[]
 }
 
 export interface BackendErrorResponse {

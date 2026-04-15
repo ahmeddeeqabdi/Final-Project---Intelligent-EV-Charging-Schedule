@@ -177,6 +177,7 @@ function SchedulerPage() {
               <ResultsSummary result={schedule} isLoading={scheduleMutation.isPending} />
               <ScheduleChart
                 slots={schedule?.slots ?? []}
+                marketSignals={schedule?.marketSignals ?? []}
                 isLoading={scheduleMutation.isPending}
                 windowStart={lastRequestWindow?.startTime ?? null}
                 windowEnd={lastRequestWindow?.endTime ?? null}
