@@ -21,8 +21,11 @@ import com.sdu.evcharging.dto.schedule.ScheduleResult;
 public class GreedyChargingStrategy implements ChargingStrategy {
 
     private static final double ENERGY_TOLERANCE = 1e-3;
+    private static final double STEP_ROUNDING_EPSILON = 1e-9;
     private static final double DEFAULT_WEIGHT = 0.5;
     private static final double DEFAULT_CO2 = 0.0;
+    private static final double STEP_SIZE_KWH = 0.5;
+    private static final double SLOT_DURATION_HOURS = 1.0;
 
     @Override
     public ScheduleResult solve(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {
@@ -36,6 +39,11 @@ public class GreedyChargingStrategy implements ChargingStrategy {
         if (energyRequiredKwh <= ENERGY_TOLERANCE) {
             return emptyResult();
         }
+        int totalSteps = toRoundedSteps(energyRequiredKwh);
+        int maxStepsPerSlot = toMaxStepsPerSlot(constraints.maxChargingPowerKw());
+        if (maxStepsPerSlot <= 0) {
+            throw new IllegalArgumentException("Max charging power is too low for the configured step size.");
+        }
 
         Map<LocalDateTime, Double> co2ByTime = buildCo2Lookup(co2Data);
         double defaultCo2 = averageCo2OrDefault(co2Data);
@@ -45,9 +53,14 @@ public class GreedyChargingStrategy implements ChargingStrategy {
             return emptyResult();
         }
 
+        long maxDeliverableSteps = (long) maxStepsPerSlot * candidates.size();
+        if (maxDeliverableSteps < totalSteps) {
+            throw new IllegalArgumentException("Charging window is infeasible for the required energy and max power.");
+        }
+
         Weight normalizedWeights = normalizeWeights(constraints.weightPrice(), constraints.weightCO2());
         List<ScoredCandidateSlot> scoredCandidates = scoreAndSortCandidates(candidates, normalizedWeights);
-        List<ChargingSlot> slots = allocateSlots(scoredCandidates, constraints.maxChargingPowerKw(), energyRequiredKwh);
+        List<ChargingSlot> slots = allocateSlots(scoredCandidates, maxStepsPerSlot, totalSteps);
 
         slots.sort(Comparator.comparing(ChargingSlot::timestamp));
 
@@ -58,6 +71,16 @@ public class GreedyChargingStrategy implements ChargingStrategy {
 
     private static ScheduleResult emptyResult() {
         return new ScheduleResult(List.of(), 0.0, 0.0);
+    }
+
+    private static int toRoundedSteps(double energyRequiredKwh) {
+        double rawSteps = energyRequiredKwh / STEP_SIZE_KWH;
+        return (int) Math.max(1, Math.ceil(rawSteps - STEP_ROUNDING_EPSILON));
+    }
+
+    private static int toMaxStepsPerSlot(double maxChargingPowerKw) {
+        double maxEnergyPerSlot = maxChargingPowerKw * SLOT_DURATION_HOURS;
+        return (int) Math.floor((maxEnergyPerSlot / STEP_SIZE_KWH) + STEP_ROUNDING_EPSILON);
     }
 
     private static Map<LocalDateTime, Double> buildCo2Lookup(List<GridData> co2Data) {
@@ -136,18 +159,19 @@ public class GreedyChargingStrategy implements ChargingStrategy {
 
     private static List<ChargingSlot> allocateSlots(
             List<ScoredCandidateSlot> scoredCandidates,
-            double maxChargingPowerKw,
-            double energyRequiredKwh
+            int maxStepsPerSlot,
+            int totalSteps
     ) {
-        double remainingKwh = energyRequiredKwh;
+        int remainingSteps = totalSteps;
         List<ChargingSlot> slots = new ArrayList<>();
 
         for (ScoredCandidateSlot scored : scoredCandidates) {
-            if (remainingKwh <= ENERGY_TOLERANCE) {
+            if (remainingSteps <= 0) {
                 break;
             }
 
-            double powerDraw = Math.min(maxChargingPowerKw, remainingKwh);
+            int steps = Math.min(maxStepsPerSlot, remainingSteps);
+            double powerDraw = steps * STEP_SIZE_KWH;
             if (powerDraw <= 0.0) {
                 continue;
             }
@@ -159,7 +183,7 @@ public class GreedyChargingStrategy implements ChargingStrategy {
                     slot.price(),
                     slot.co2()
             ));
-            remainingKwh -= powerDraw;
+            remainingSteps -= steps;
         }
 
         return slots;

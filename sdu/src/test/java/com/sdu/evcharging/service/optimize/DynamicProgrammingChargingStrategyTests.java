@@ -99,7 +99,7 @@ class DynamicProgrammingChargingStrategyTests {
     }
 
     @Test
-    void solve_ThrowsWhenEnergyIsNotRepresentableByStepSize() {
+    void solve_RoundsEnergyWhenNotRepresentableByStepSize() {
         DynamicProgrammingChargingStrategy optimizer = new DynamicProgrammingChargingStrategy();
 
         LocalDateTime t1 = LocalDateTime.of(2026, 4, 11, 10, 0);
@@ -109,16 +109,23 @@ class DynamicProgrammingChargingStrategyTests {
                 10.0,
                 7.0,
                 t1,
-                t1.plusHours(2),
+                t1.plusHours(5),
                 "DK1",
                 0.5,
                 0.5
         );
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> optimizer.solve(constraints, List.of(new GridData(t1, 0.2)), List.of()));
+        List<GridData> prices = List.of(
+                new GridData(t1, 0.2),
+                new GridData(t1.plusHours(1), 0.3),
+                new GridData(t1.plusHours(2), 0.4),
+                new GridData(t1.plusHours(3), 0.5),
+                new GridData(t1.plusHours(4), 0.6)
+        );
 
-        assertTrue(exception.getMessage().contains("not representable"));
+        ScheduleResult result = optimizer.solve(constraints, prices, List.of());
+        double scheduledEnergy = result.slots().stream().mapToDouble(slot -> slot.powerDraw()).sum();
+        assertEquals(1.5, scheduledEnergy, 1e-9);
     }
 
     @Test
@@ -187,6 +194,19 @@ class DynamicProgrammingChargingStrategyTests {
         ScheduleResult optimalResult = optimal.solve(constraints, prices, co2);
         ScheduleResult greedyResult = greedy.solve(constraints, prices, co2);
 
-        assertTrue(optimalResult.totalPredictedCost() <= greedyResult.totalPredictedCost() + 1e-9);
+        DynamicProgrammingChargingStrategy.RealWorldCostBreakdown optimalBreakdown =
+                DynamicProgrammingChargingStrategy.calculateRealWorldCost(
+                        optimalResult.slots(),
+                        constraints,
+                        prices,
+                        co2);
+        DynamicProgrammingChargingStrategy.RealWorldCostBreakdown greedyBreakdown =
+                DynamicProgrammingChargingStrategy.calculateRealWorldCost(
+                        greedyResult.slots(),
+                        constraints,
+                        prices,
+                        co2);
+
+        assertTrue(optimalBreakdown.totalRealWorldCost() <= greedyBreakdown.totalRealWorldCost() + 1e-9);
     }
 }
