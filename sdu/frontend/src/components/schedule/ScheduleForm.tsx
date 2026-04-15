@@ -43,6 +43,22 @@ const buildDefaultValues = (initialValues?: Partial<ScheduleFormValues>): Schedu
     ...initialValues,
   })
 
+const formatHours = (hours: number): string => {
+  if (!Number.isFinite(hours) || hours <= 0) {
+    return '0h'
+  }
+
+  const wholeHours = Math.floor(hours)
+  const minutes = Math.round((hours - wholeHours) * 60)
+  if (wholeHours <= 0) {
+    return `${minutes}m`
+  }
+  if (minutes <= 0) {
+    return `${wholeHours}h`
+  }
+  return `${wholeHours}h ${minutes}m`
+}
+
 export function ScheduleForm({
   onSubmit,
   onSaveDefaults,
@@ -51,6 +67,32 @@ export function ScheduleForm({
   isSavingDefaults = false,
 }: ScheduleFormProps) {
   const [values, setValues] = useState<ScheduleFormValues>(() => buildDefaultValues(initialValues))
+
+  const now = Date.now()
+  const departureTimestamp = new Date(values.departureTime).getTime()
+  const energyNeeded = Math.max(0, ((values.targetSoC - values.currentSoC) / 100) * values.batteryCapacity)
+  const estimatedHours = values.maxPower > 0 ? energyNeeded / values.maxPower : Number.POSITIVE_INFINITY
+  const availableHours = Number.isFinite(departureTimestamp)
+    ? Math.max(0, (departureTimestamp - now) / (1000 * 60 * 60))
+    : 0
+
+  const validationErrors: string[] = []
+  if (!Number.isFinite(departureTimestamp)) {
+    validationErrors.push('Departure time must be a valid date and time.')
+  } else if (departureTimestamp <= now) {
+    validationErrors.push('Departure time must be in the future.')
+  }
+  if (values.currentSoC > values.targetSoC) {
+    validationErrors.push('Current SoC cannot exceed target SoC for charging optimization.')
+  }
+  if (values.batteryCapacity <= 0 || values.maxPower <= 0) {
+    validationErrors.push('Battery capacity and max power must be greater than zero.')
+  }
+  if (energyNeeded > 0 && Number.isFinite(estimatedHours) && estimatedHours > availableHours) {
+    validationErrors.push('The selected target is unlikely to be reachable before departure with current max power.')
+  }
+
+  const isFormInvalid = validationErrors.length > 0
 
   const updateValue = <K extends keyof ScheduleFormValues>(key: K, value: ScheduleFormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }))
@@ -194,7 +236,33 @@ export function ScheduleForm({
             </div>
           </div>
 
-          <Button type="submit" className={cn('w-full min-h-11 text-sm sm:text-base')} disabled={isSubmitting}>
+          <div className="space-y-1.5 rounded-md border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
+            <p>
+              Energy needed: <span className="font-semibold text-foreground">{energyNeeded.toFixed(1)} kWh</span>
+            </p>
+            <p>
+              Estimated charging duration at max power:{' '}
+              <span className="font-semibold text-foreground">{formatHours(estimatedHours)}</span>
+            </p>
+            <p>
+              Time remaining until departure:{' '}
+              <span className="font-semibold text-foreground">{formatHours(availableHours)}</span>
+            </p>
+          </div>
+
+          {validationErrors.length ? (
+            <div className="space-y-1.5 rounded-md border border-warning/50 bg-warning/20 p-3 text-xs text-warning-foreground">
+              {validationErrors.map((error) => (
+                <p key={error}>{error}</p>
+              ))}
+            </div>
+          ) : null}
+
+          <Button
+            type="submit"
+            className={cn('w-full min-h-11 text-sm sm:text-base')}
+            disabled={isSubmitting || isFormInvalid}
+          >
             {isSubmitting ? (
               <span className="inline-flex items-center gap-2">
                 <Spinner className="h-4 w-4 text-primary-foreground" />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AlertTriangle, CarFront, LogOut, Moon, Sun } from 'lucide-react'
 import { ResponsiveDashboard } from '@/components/layout/ResponsiveDashboard'
 import { ScheduleChart } from '@/components/schedule/ScheduleChart'
@@ -36,6 +37,10 @@ function SchedulerPage() {
 
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
   const [showIntro, setShowIntro] = useState<boolean>(true)
+  const [lastRequestWindow, setLastRequestWindow] = useState<{
+    startTime: string
+    endTime: string
+  } | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -81,6 +86,10 @@ function SchedulerPage() {
   }, [constraintsQuery.data])
 
   const handleSubmit = (values: ScheduleFormValues) => {
+    setLastRequestWindow({
+      startTime: new Date().toISOString(),
+      endTime: values.departureTime,
+    })
     scheduleMutation.mutate(values)
   }
 
@@ -143,6 +152,11 @@ function SchedulerPage() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </Button>
+              {user?.role === 'ADMIN' ? (
+                <Button asChild type="button" variant="secondary" className="min-h-11">
+                  <Link to="/admin">Admin tools</Link>
+                </Button>
+              ) : null}
             </div>
           </div>
         </header>
@@ -161,13 +175,18 @@ function SchedulerPage() {
           content={
             <div className="space-y-4 sm:space-y-5">
               <ResultsSummary result={schedule} isLoading={scheduleMutation.isPending} />
-              <ScheduleChart slots={schedule?.slots ?? []} isLoading={scheduleMutation.isPending} />
+              <ScheduleChart
+                slots={schedule?.slots ?? []}
+                isLoading={scheduleMutation.isPending}
+                windowStart={lastRequestWindow?.startTime ?? null}
+                windowEnd={lastRequestWindow?.endTime ?? null}
+              />
 
               {scheduleMutation.error ? (
                 <Card className="border-warning/50 bg-warning/20">
                   <CardContent className="flex items-start gap-3 p-4">
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-foreground" />
-                    <div className="space-y-1 text-sm text-warning-foreground">
+                    <div className="space-y-1 text-sm text-white">
                       <p className="font-semibold">Unable to build a charging schedule</p>
                       <p>{scheduleMutation.error.message}</p>
                       {scheduleMutation.error.status === 400 ? (

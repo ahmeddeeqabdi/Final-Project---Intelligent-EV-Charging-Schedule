@@ -41,12 +41,19 @@ const mapFormToRequest = (values: ScheduleFormValues): BackendScheduleRequest =>
 }
 
 const mapBackendToUi = (payload: BackendScheduleResult): ScheduleResult => {
+  const degradedMode = payload.degradedMode ?? {
+    enabled: false,
+    source: 'live',
+    reason: null,
+  }
+
   return {
     totalCost: payload.totalPredictedCost,
     totalCO2: payload.totalPredictedEmissions,
-    isDegradedMode: payload.degradedMode.enabled,
-    fallbackSource: payload.degradedMode.source,
-    fallbackReason: payload.degradedMode.reason ?? undefined,
+    isDegradedMode: degradedMode.enabled,
+    fallbackSource: degradedMode.source,
+    fallbackReason: degradedMode.reason ?? undefined,
+    fallbackDataAgeHours: degradedMode.dataAgeHours ?? undefined,
     slots: payload.slots.map((slot) => ({
       timestamp: slot.timestamp,
       powerValue: slot.powerDraw,
@@ -68,9 +75,25 @@ const submitSchedule = async (values: ScheduleFormValues): Promise<ScheduleResul
 
     return mapBackendToUi(payload)
   } catch (caught) {
+    if (caught instanceof ScheduleApiError) {
+      throw caught
+    }
+
     if (caught instanceof ApiError) {
       throw new ScheduleApiError(caught.message, caught.status, caught.details)
     }
+
+    if (caught instanceof TypeError) {
+      throw new ScheduleApiError(
+        'Cannot reach scheduling API. Confirm backend is running and frontend is using the local proxy.',
+        503,
+      )
+    }
+
+    if (caught instanceof Error) {
+      throw new ScheduleApiError(caught.message, 500)
+    }
+
     throw new ScheduleApiError('Scheduling request failed. Please retry in a moment.', 500)
   }
 }

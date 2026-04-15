@@ -23,6 +23,7 @@ export interface ScheduleResult {
   isDegradedMode: boolean
   fallbackSource: string
   fallbackReason?: string
+  fallbackDataAgeHours?: number
   slots: ScheduledSlot[]
 }
 
@@ -113,4 +114,26 @@ export interface UpdateUserConstraintsRequest {
   defaultMaxPower: number
   defaultPreferenceWeight: number
   priceArea: PriceZone
+}
+
+export interface AdminBenchmarkMetricSummary {
+  mean: number
+  p50: number
+  p95: number
+  max: number
+}
+
+export interface AdminBenchmarkRuntimeSummary {
+  optimalMeanMs: number
+  greedyMeanMs: number
+  overheadDeltaMs: number
+}
+
+export interface AdminBenchmarkResponse {
+  scenarios: number
+  seed: number
+  objectiveGapPercent: AdminBenchmarkMetricSummary
+  costGapPercent: AdminBenchmarkMetricSummary
+  emissionsGapPercent: AdminBenchmarkMetricSummary
+  runtimeMs: AdminBenchmarkRuntimeSummary
 }

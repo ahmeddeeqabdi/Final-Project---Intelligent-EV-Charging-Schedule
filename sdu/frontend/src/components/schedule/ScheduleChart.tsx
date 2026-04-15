@@ -17,14 +17,16 @@ import { type ScheduledSlot } from '@/types/api'
 interface ScheduleChartProps {
   slots: ScheduledSlot[]
   isLoading: boolean
+  windowStart?: string | null
+  windowEnd?: string | null
 }
 
 interface ChartPoint {
   timestamp: string
   timeLabel: string
   powerValue: number
-  energyPrice: number
-  co2Intensity: number
+  energyPrice: number | null
+  co2Intensity: number | null
 }
 
 const twoDecimal = new Intl.NumberFormat('en-DK', {
@@ -60,7 +62,7 @@ const getInterval = (width: number, points: number): number => {
   return Math.max(0, Math.ceil(points / 10) - 1)
 }
 
-export function ScheduleChart({ slots, isLoading }: ScheduleChartProps) {
+export function ScheduleChart({ slots, isLoading, windowStart = null, windowEnd = null }: ScheduleChartProps) {
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return 1280
@@ -78,14 +80,70 @@ export function ScheduleChart({ slots, isLoading }: ScheduleChartProps) {
   }, [])
 
   const chartData = useMemo<ChartPoint[]>(() => {
-    return slots.map((slot) => ({
-      timestamp: slot.timestamp,
-      timeLabel: toLabel(slot.timestamp),
-      powerValue: slot.powerValue,
-      energyPrice: slot.energyPrice,
-      co2Intensity: slot.co2Intensity,
-    }))
-  }, [slots])
+    if (!slots.length) {
+      return []
+    }
+
+    const slotByHour = new Map<string, { power: number; price: number; co2: number }>()
+    for (const slot of slots) {
+      const key = new Date(slot.timestamp).toISOString().slice(0, 13)
+      const current = slotByHour.get(key)
+      if (current) {
+        current.power += slot.powerValue
+        current.price = slot.energyPrice
+        current.co2 = slot.co2Intensity
+      } else {
+        slotByHour.set(key, {
+          power: slot.powerValue,
+          price: slot.energyPrice,
+          co2: slot.co2Intensity,
+        })
+      }
+    }
+
+    const sortedSlots = [...slots].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    const inferredStart = new Date(sortedSlots[0].timestamp)
+    const inferredEnd = new Date(sortedSlots[sortedSlots.length - 1].timestamp)
+    inferredEnd.setHours(inferredEnd.getHours() + 1)
+
+    const explicitStart = windowStart ? new Date(windowStart) : null
+    const explicitEnd = windowEnd ? new Date(windowEnd) : null
+
+    const start = explicitStart && !Number.isNaN(explicitStart.getTime()) ? explicitStart : inferredStart
+    const end = explicitEnd && !Number.isNaN(explicitEnd.getTime()) ? explicitEnd : inferredEnd
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+      return sortedSlots.map((slot) => ({
+        timestamp: slot.timestamp,
+        timeLabel: toLabel(slot.timestamp),
+        powerValue: slot.powerValue,
+        energyPrice: slot.energyPrice,
+        co2Intensity: slot.co2Intensity,
+      }))
+    }
+
+    const cursor = new Date(start)
+    cursor.setMinutes(0, 0, 0)
+    const points: ChartPoint[] = []
+
+    while (cursor < end) {
+      const timestamp = cursor.toISOString()
+      const key = timestamp.slice(0, 13)
+      const slot = slotByHour.get(key)
+
+      points.push({
+        timestamp,
+        timeLabel: toLabel(timestamp),
+        powerValue: slot?.power ?? 0,
+        energyPrice: slot?.price ?? null,
+        co2Intensity: slot?.co2 ?? null,
+      })
+
+      cursor.setHours(cursor.getHours() + 1)
+    }
+
+    return points
+  }, [slots, windowStart, windowEnd])
 
   const tickInterval = useMemo(() => getInterval(viewportWidth, chartData.length), [viewportWidth, chartData.length])
 
@@ -143,7 +201,10 @@ export function ScheduleChart({ slots, isLoading }: ScheduleChartProps) {
                 width={64}
               />
               <Tooltip
-                formatter={(value, name) => {
+                formatter={(value: number | string | null, name: string | number) => {
+                  if (value == null) {
+                    return ['N/A', String(name)]
+                  }
                   const numericValue = typeof value === 'number' ? value : Number(value ?? 0)
                   const seriesName = String(name)
 
