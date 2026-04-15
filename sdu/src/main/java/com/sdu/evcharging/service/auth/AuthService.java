@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String ONLY_ADMIN_EMAIL = "admin@example.com";
     private static final double DEFAULT_BATTERY_CAPACITY = 77.0;
     private static final double DEFAULT_MAX_POWER = 11.0;
     private static final double DEFAULT_PREFERENCE_WEIGHT = 0.5;
@@ -41,7 +42,7 @@ public class AuthService {
         User user = User.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(password))
-                .role(UserRole.USER)
+            .role(resolveRoleForEmail(email))
                 .build();
 
         user.setConstraints(UserConstraints.builder()
@@ -57,7 +58,7 @@ public class AuthService {
         return new AuthResponse(token, toUserSummary(savedUser));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = normalizeEmail(request.email());
         String password = normalizePassword(request.password());
@@ -69,8 +70,18 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
+        UserRole expectedRole = resolveRoleForEmail(user.getEmail());
+        if (user.getRole() != expectedRole) {
+            user.setRole(expectedRole);
+            user = userRepository.save(user);
+        }
+
         String token = jwtProvider.generateToken(user);
         return new AuthResponse(token, toUserSummary(user));
+    }
+
+    private static UserRole resolveRoleForEmail(String email) {
+        return ONLY_ADMIN_EMAIL.equalsIgnoreCase(email) ? UserRole.ADMIN : UserRole.USER;
     }
 
     private static UserSummaryResponse toUserSummary(User user) {
