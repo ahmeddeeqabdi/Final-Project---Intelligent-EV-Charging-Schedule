@@ -14,7 +14,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
-import { type MarketSignalPoint, type ScheduledSlot } from '@/types/api'
+import { type MarketSignalPoint, type OptimizationAlgorithm, type ScheduledSlot } from '@/types/api'
 
 interface ScheduleChartProps {
   slots: ScheduledSlot[]
@@ -22,6 +22,7 @@ interface ScheduleChartProps {
   isLoading: boolean
   windowStart?: string | null
   windowEnd?: string | null
+  algorithm?: OptimizationAlgorithm
 }
 
 interface ChartPoint {
@@ -131,7 +132,14 @@ const MarkerBadge = ({ viewBox, text, color }: MarkerBadgeProps) => {
   )
 }
 
-export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = null, windowEnd = null }: ScheduleChartProps) {
+export function ScheduleChart({
+  slots,
+  marketSignals,
+  isLoading,
+  windowStart = null,
+  windowEnd = null,
+  algorithm = 'greedy',
+}: ScheduleChartProps) {
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return 1280
@@ -321,8 +329,8 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Charging Plan Timeline</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Charging Plan Timeline</CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-[280px] items-center justify-center">
           <div className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
@@ -337,8 +345,8 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
   if (!chartData.length) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Charging Plan Timeline</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Charging Plan Timeline</CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-[220px] items-center justify-center text-center text-sm text-muted-foreground">
           Submit constraints to visualize charging power, spot prices, and CO2 intensity over time.
@@ -349,11 +357,11 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Charging Plan Timeline</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg">Charging Plan Timeline</CardTitle>
       </CardHeader>
-      <CardContent className="px-2 pb-4 sm:px-4">
-        <div className="h-[340px] w-full sm:h-[380px]">
+      <CardContent className="px-2 pb-3 sm:px-4">
+        <div className="h-[260px] w-full sm:h-[290px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: 0, bottom: 4 }}>
               {departureMarkerMs ? (
@@ -425,10 +433,12 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
                           <span className="font-medium text-muted-foreground">CO2:</span>{' '}
                           {point.co2Intensity == null ? 'N/A' : `${twoDecimal.format(point.co2Intensity)} g/kWh`}
                         </p>
-                        <p>
-                          <span className="font-medium text-muted-foreground">Efficiency:</span>{' '}
-                          {`${twoDecimal.format(point.efficiencyPct)}%`}
-                        </p>
+                        {algorithm === 'optimal' ? (
+                          <p>
+                            <span className="font-medium text-muted-foreground">Efficiency:</span>{' '}
+                            {`${twoDecimal.format(point.efficiencyPct)}%`}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   )

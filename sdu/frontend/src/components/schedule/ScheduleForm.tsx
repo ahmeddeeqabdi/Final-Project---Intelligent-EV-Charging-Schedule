@@ -147,7 +147,7 @@ export function ScheduleForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="targetSoC">Target State of Charge (%)</Label>
+              <Label htmlFor="targetSoC">Target SoC (%)</Label>
               <Input
                 id="targetSoC"
                 min={1}

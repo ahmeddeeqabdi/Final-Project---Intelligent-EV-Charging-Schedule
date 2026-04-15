@@ -43,6 +43,7 @@ function SchedulerPage() {
     startTime: string
     endTime: string
   } | null>(null)
+  const [lastRequestAlgorithm, setLastRequestAlgorithm] = useState<ScheduleFormValues['algorithm']>('greedy')
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -92,6 +93,7 @@ function SchedulerPage() {
       startTime: new Date().toISOString(),
       endTime: values.departureTime,
     })
+    setLastRequestAlgorithm(values.algorithm)
     scheduleMutation.mutate(values)
   }
 
@@ -131,7 +133,7 @@ function SchedulerPage() {
   const showStatusBanner = Boolean(schedule?.isDegradedMode && degradedBannerKey !== dismissedBannerKey)
 
   return (
-    <div className={cn('min-h-screen pb-10', showIntro && 'intro-active')}>
+    <div className={cn('min-h-screen pb-6', showIntro && 'intro-active')}>
       {showIntro ? (
         <div className="intro-overlay" aria-hidden="true">
           <div className="intro-overlay__ambient" />
@@ -154,8 +156,8 @@ function SchedulerPage() {
           }
         }}
       />
-      <div className="mx-auto max-w-7xl px-4 pb-8 pt-5 sm:px-6 lg:px-8">
-        <header className="mb-5 rounded-lg border border-border/50 bg-card/80 p-5 shadow-soft backdrop-blur sm:p-6">
+      <div className="mx-auto max-w-7xl px-4 pb-4 pt-3 sm:px-6 lg:px-8">
+        <header className="mb-4 rounded-lg border border-border/50 bg-card/80 p-4 shadow-soft backdrop-blur sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -206,7 +208,7 @@ function SchedulerPage() {
             />
           }
           content={
-            <div className="space-y-4 sm:space-y-5">
+            <div className="space-y-3 sm:space-y-4">
               <ResultsSummary result={schedule} isLoading={scheduleMutation.isPending} />
               <ScheduleChart
                 slots={schedule?.slots ?? []}
@@ -214,6 +216,7 @@ function SchedulerPage() {
                 isLoading={scheduleMutation.isPending}
                 windowStart={lastRequestWindow?.startTime ?? null}
                 windowEnd={lastRequestWindow?.endTime ?? null}
+                algorithm={lastRequestAlgorithm}
               />
               <PlanBreakdown result={schedule} isLoading={scheduleMutation.isPending} />
 

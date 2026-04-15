@@ -100,8 +100,8 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Plan Breakdown</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Plan Breakdown</CardTitle>
           <CardDescription>Creating a detailed slot-by-slot explanation...</CardDescription>
         </CardHeader>
         <CardContent className="flex min-h-[180px] items-center justify-center">
@@ -117,8 +117,8 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   if (!result || !rows.length) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Plan Breakdown</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Plan Breakdown</CardTitle>
           <CardDescription>
             Get a slot-level plan table after generating a charging plan.
           </CardDescription>
@@ -132,46 +132,46 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Plan Breakdown</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg">Plan Breakdown</CardTitle>
         <CardDescription>
           Slot-by-slot economics and sustainability for the selected charging windows.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 pt-0">
         <div>
           <section>
             <div className="overflow-x-auto rounded-lg border border-border/60">
               <table className="min-w-full divide-y divide-border/60 text-sm">
                 <thead className="bg-muted/30 text-xs uppercase tracking-[0.06em] text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2 text-left">Window</th>
-                    <th className="px-3 py-2 text-right">Power</th>
-                    <th className="px-3 py-2 text-right">Energy</th>
-                    <th className="px-3 py-2 text-right">Price</th>
-                    <th className="px-3 py-2 text-right">CO2</th>
-                    <th className="px-3 py-2 text-right">Cost</th>
+                    <th className="px-3 py-1.5 text-left">Window</th>
+                    <th className="px-3 py-1.5 text-right">Power</th>
+                    <th className="px-3 py-1.5 text-right">Energy</th>
+                    <th className="px-3 py-1.5 text-right">Price</th>
+                    <th className="px-3 py-1.5 text-right">CO2</th>
+                    <th className="px-3 py-1.5 text-right">Cost</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
                   {rows.map((row) => (
                     <tr key={row.timestampMs} className="bg-card/40">
-                      <td className="whitespace-nowrap px-3 py-2 font-medium text-foreground">
+                      <td className="whitespace-nowrap px-3 py-1.5 font-medium text-foreground">
                         {row.startLabel} - {row.endLabel}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-foreground">
+                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
                         {decimalFormatter.format(row.powerKw)} kW
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-foreground">
+                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
                         {decimalFormatter.format(row.energyKwh)} kWh
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-foreground">
+                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
                         {decimalFormatter.format(row.priceDkkPerKwh)} kr/kWh
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-foreground">
+                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
                         {decimalFormatter.format(row.co2PerKwh)} g/kWh
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right font-medium text-foreground">
+                      <td className="whitespace-nowrap px-3 py-1.5 text-right font-medium text-foreground">
                         {currencyFormatter.format(row.costDkk)}
                       </td>
                     </tr>
@@ -179,18 +179,18 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
                 </tbody>
                 <tfoot className="border-t border-border/60 bg-muted/20">
                   <tr>
-                    <td className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    <td className="px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                       Totals
                     </td>
-                    <td className="px-3 py-2 text-right text-foreground">-</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-foreground">
+                    <td className="px-3 py-1.5 text-right text-foreground">-</td>
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold text-foreground">
                       {decimalFormatter.format(totals.energy)} kWh
                     </td>
-                    <td className="px-3 py-2 text-right text-foreground">-</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-foreground">
+                    <td className="px-3 py-1.5 text-right text-foreground">-</td>
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold text-foreground">
                       {decimalFormatter.format(totals.co2)} gCO2
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-foreground">
+                    <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold text-foreground">
                       {currencyFormatter.format(totals.cost)}
                     </td>
                   </tr>
