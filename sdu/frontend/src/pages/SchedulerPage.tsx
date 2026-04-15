@@ -37,6 +37,7 @@ function SchedulerPage() {
 
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
   const [showIntro, setShowIntro] = useState<boolean>(true)
+  const [dismissedBannerKey, setDismissedBannerKey] = useState<string | null>(null)
   const [lastRequestWindow, setLastRequestWindow] = useState<{
     startTime: string
     endTime: string
@@ -103,6 +104,30 @@ function SchedulerPage() {
   }
 
   const schedule = scheduleMutation.data ?? null
+  const degradedBannerKey = useMemo(() => {
+    if (!schedule?.isDegradedMode) {
+      return null
+    }
+
+    return [
+      schedule.fallbackSource,
+      schedule.fallbackReason ?? '',
+      schedule.fallbackDataAgeHours ?? 'unknown',
+    ].join('|')
+  }, [schedule])
+
+  useEffect(() => {
+    if (!degradedBannerKey) {
+      setDismissedBannerKey(null)
+      return
+    }
+
+    if (dismissedBannerKey && dismissedBannerKey !== degradedBannerKey) {
+      setDismissedBannerKey(null)
+    }
+  }, [degradedBannerKey, dismissedBannerKey])
+
+  const showStatusBanner = Boolean(schedule?.isDegradedMode && degradedBannerKey !== dismissedBannerKey)
 
   return (
     <div className={cn('min-h-screen pb-10', showIntro && 'intro-active')}>
@@ -120,7 +145,14 @@ function SchedulerPage() {
           </div>
         </div>
       ) : null}
-      <StatusBanner result={schedule} />
+      <StatusBanner
+        result={showStatusBanner ? schedule : null}
+        onDismiss={() => {
+          if (degradedBannerKey) {
+            setDismissedBannerKey(degradedBannerKey)
+          }
+        }}
+      />
       <div className="mx-auto max-w-7xl px-4 pb-8 pt-5 sm:px-6 lg:px-8">
         <header className="mb-5 rounded-lg border border-border/50 bg-card/80 p-5 shadow-soft backdrop-blur sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
