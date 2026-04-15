@@ -6,7 +6,6 @@ import {
   ComposedChart,
   Legend,
   Line,
-  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -257,49 +256,21 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
     return enrichPoints(points)
   }, [slots, marketSignals, windowStart, windowEnd])
 
-  const constraintWindowBounds = useMemo(() => {
-    if (!windowStart || !windowEnd || !chartData.length) {
+  const departureMarkerMs = useMemo(() => {
+    if (!windowEnd || !chartData.length) {
       return null
     }
 
-    const startDate = new Date(windowStart)
-    const endDate = new Date(windowEnd)
-
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
-      return null
-    }
-
-    const chartMinMs = chartData[0].timestampMs
-    const chartMaxMs = chartData[chartData.length - 1].timestampMs
-    const x1 = Math.max(chartMinMs, Math.min(startDate.getTime(), chartMaxMs))
-    const x2 = Math.max(chartMinMs, Math.min(endDate.getTime(), chartMaxMs))
-
-    if (x1 > x2) {
-      return null
-    }
-
-    return { x1, x2 }
-  }, [chartData, windowStart, windowEnd])
-
-  const windowMarkers = useMemo(() => {
-    if (!windowStart || !windowEnd || !chartData.length) {
-      return null
-    }
-
-    const plugInMs = new Date(windowStart).getTime()
     const departureMs = new Date(windowEnd).getTime()
-    if (Number.isNaN(plugInMs) || Number.isNaN(departureMs) || departureMs <= plugInMs) {
+    if (Number.isNaN(departureMs)) {
       return null
     }
 
     const chartMinMs = chartData[0].timestampMs
     const chartMaxMs = chartData[chartData.length - 1].timestampMs
 
-    return {
-      plugInMs: Math.max(chartMinMs, Math.min(plugInMs, chartMaxMs)),
-      departureMs: Math.max(chartMinMs, Math.min(departureMs, chartMaxMs)),
-    }
-  }, [chartData, windowStart, windowEnd])
+    return Math.max(chartMinMs, Math.min(departureMs, chartMaxMs))
+  }, [chartData, windowEnd])
 
   const stepMs = useMemo(() => {
     if (chartData.length < 2) {
@@ -385,30 +356,9 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
         <div className="h-[340px] w-full sm:h-[380px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: 0, bottom: 4 }}>
-              {constraintWindowBounds ? (
-                <ReferenceArea
-                  x1={constraintWindowBounds.x1}
-                  x2={constraintWindowBounds.x2}
-                  yAxisId="left"
-                  ifOverflow="extendDomain"
-                  fill={RIGHT_AXIS_COLOR}
-                  fillOpacity={0.08}
-                />
-              ) : null}
-              {windowMarkers ? (
+              {departureMarkerMs ? (
                 <ReferenceLine
-                  x={windowMarkers.plugInMs}
-                  stroke={POWER_COLOR}
-                  strokeWidth={2.5}
-                  strokeDasharray="5 4"
-                  yAxisId="left"
-                  ifOverflow="extendDomain"
-                  label={<MarkerBadge text="Plug-in" color={POWER_COLOR} />}
-                />
-              ) : null}
-              {windowMarkers ? (
-                <ReferenceLine
-                  x={windowMarkers.departureMs}
+                  x={departureMarkerMs}
                   stroke="#EF4444"
                   strokeWidth={2.5}
                   strokeDasharray="5 4"
@@ -469,7 +419,7 @@ export function ScheduleChart({ slots, marketSignals, isLoading, windowStart = n
                         </p>
                         <p>
                           <span className="font-medium text-muted-foreground">Price:</span>{' '}
-                          {point.energyPrice == null ? 'N/A' : `${twoDecimal.format(point.energyPrice)} ore/kWh`}
+                          {point.energyPrice == null ? 'N/A' : `${twoDecimal.format(point.energyPrice)} kr/kWh`}
                         </p>
                         <p>
                           <span className="font-medium text-muted-foreground">CO2:</span>{' '}

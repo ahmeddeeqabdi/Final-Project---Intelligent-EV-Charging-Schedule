@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, CarFront, LogOut, Moon, Sun } from 'lucide-react'
 import { ResponsiveDashboard } from '@/components/layout/ResponsiveDashboard'
+import { PlanBreakdown } from '@/components/schedule/PlanBreakdown'
 import { ScheduleChart } from '@/components/schedule/ScheduleChart'
 import { ScheduleForm } from '@/components/schedule/ScheduleForm'
 import { ResultsSummary } from '@/components/schedule/ResultsSummary'
@@ -214,6 +215,7 @@ function SchedulerPage() {
                 windowStart={lastRequestWindow?.startTime ?? null}
                 windowEnd={lastRequestWindow?.endTime ?? null}
               />
+              <PlanBreakdown result={schedule} isLoading={scheduleMutation.isPending} />
 
               {scheduleMutation.error ? (
                 <Card className="border-warning/50 bg-warning/20">

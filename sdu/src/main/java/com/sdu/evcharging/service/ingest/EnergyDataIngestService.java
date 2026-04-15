@@ -29,6 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EnergyDataIngestService {
 
+        private static final String CO2_PROGNOSIS_DATASET = "CO2EmisProg";
+        private static final String CO2_HISTORICAL_DATASET = "CO2Emis";
+
     private final WebClient webClient;
     private final EnergyPriceRepository energyPriceRepository;
     private final CO2IntensityRepository co2IntensityRepository;
@@ -83,7 +86,7 @@ public class EnergyDataIngestService {
 
     public List<EdsCO2Record> fetchCO2Data(LocalDate date, String zone) {
         try {
-            return CircuitBreaker.decorateSupplier(co2Breaker, () -> fetchCo2FromApi(date, zone)).get();
+                        return CircuitBreaker.decorateSupplier(co2Breaker, () -> fetchCo2FromApi(date, zone)).get();
         } catch (Exception ex) {
             return fallbackCo2(date, zone, ex);
         }
@@ -152,18 +155,39 @@ public class EnergyDataIngestService {
     }
 
     private List<EdsCO2Record> fetchCo2FromApi(LocalDate date, String zone) {
+        List<EdsCO2Record> prognosis = fetchCo2FromDataset(date, zone, CO2_PROGNOSIS_DATASET);
+        if (!prognosis.isEmpty()) {
+            log.info("Using CO2 prognosis dataset [dataset={}] [zone={}] [date={}] records={}",
+                    CO2_PROGNOSIS_DATASET, zone, date, prognosis.size());
+            return prognosis;
+        }
+
+        log.warn("No CO2 prognosis records found [dataset={}] [zone={}] [date={}]. Falling back to historical dataset.",
+                CO2_PROGNOSIS_DATASET, zone, date);
+
+        List<EdsCO2Record> historical = fetchCo2FromDataset(date, zone, CO2_HISTORICAL_DATASET);
+        if (!historical.isEmpty()) {
+            log.info("Using CO2 historical dataset [dataset={}] [zone={}] [date={}] records={}",
+                    CO2_HISTORICAL_DATASET, zone, date, historical.size());
+        }
+        return historical;
+    }
+
+    private List<EdsCO2Record> fetchCo2FromDataset(LocalDate date, String zone, String datasetName) {
         String startStr = date.atStartOfDay().format(EDS_DATE_FORMAT);
         String endStr = date.plusDays(1).atStartOfDay().format(EDS_DATE_FORMAT);
         String filterJson = "{\"PriceArea\":[\"" + zone + "\"]}";
 
+        log.info("Requesting {} | Zone: {} | Start: {} | End: {}", datasetName, zone, startStr, endStr);
+
         EdsApiResponse<EdsCO2Record> response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/dataset/CO2Emis")
+                        .path("/dataset/{dataset}")
                         .queryParam("start", startStr)
                         .queryParam("end", endStr)
                         .queryParam("filter", "{filter}")
                         .queryParam("sort", "Minutes5UTC ASC")
-                        .build(filterJson))
+                        .build(datasetName, filterJson))
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<EdsApiResponse<EdsCO2Record>>() {})
                 .block(requestTimeout);
