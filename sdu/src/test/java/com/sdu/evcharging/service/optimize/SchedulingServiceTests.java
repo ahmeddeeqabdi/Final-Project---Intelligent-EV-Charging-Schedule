@@ -1,13 +1,13 @@
 package com.sdu.evcharging.service.optimize;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,8 +35,7 @@ class SchedulingServiceTests {
     @Mock
     private CO2IntensityRepository co2IntensityRepository;
 
-    @Mock
-    private Map<String, ChargingStrategy> strategies;
+    private final Map<String, ChargingStrategy> strategies = new HashMap<>();
 
     @Mock
     private ChargingStrategy mockStrategy;
@@ -48,10 +47,10 @@ class SchedulingServiceTests {
     private LocalDateTime plugInTime;
     private LocalDateTime departureTime;
 
-    @BeforeEach
     void setUp() {
         plugInTime = LocalDateTime.of(2026, 3, 13, 10, 0);
         departureTime = plugInTime.plusHours(5);
+        strategies.clear();
 
         request = new ScheduleRequest(
                 20.0, 80.0, 50.0, 11.0, plugInTime, departureTime, "DK1", 0.5, 0.5
@@ -60,6 +59,7 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_ValidInput_ReturnsSchedule() {
+        setUp();
         EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
         CO2Intensity co2AtPlugIn = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
         ScheduleResult expectedScheduleResult = new ScheduleResult(List.of(), 10.0, 100.0);
@@ -69,8 +69,8 @@ class SchedulingServiceTests {
         when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
             "DK1", plugInTime, departureTime)).thenReturn(List.of(co2AtPlugIn));
         
-        when(strategies.get("greedy")).thenReturn(mockStrategy);
-        when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
+        strategies.put("greedy", mockStrategy);
+        when(mockStrategy.solve(any(UserConstraints.class), any(), any()))
             .thenReturn(expectedScheduleResult);
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "greedy");
@@ -84,6 +84,7 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_NoPrices_ThrowsException() {
+        setUp();
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
                 "DK1", plugInTime, departureTime)).thenReturn(List.of());
         when(energyPriceRepository.findTopByPriceAreaOrderByHourUtcDesc("DK1")).thenReturn(java.util.Optional.empty());
@@ -97,15 +98,15 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_InvalidAlgorithm_FallsBackToNaive() {
+        setUp();
         EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
         ScheduleResult expectedScheduleResult = new ScheduleResult(List.of(), 50.0, 200.0);
 
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
             "DK1", plugInTime, departureTime)).thenReturn(List.of(priceAtPlugIn));
         
-        when(strategies.get("non-existent")).thenReturn(null);
-        when(strategies.get("naive")).thenReturn(mockStrategy);
-        when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
+        strategies.put("naive", mockStrategy);
+        when(mockStrategy.solve(any(UserConstraints.class), any(), any()))
             .thenReturn(expectedScheduleResult);
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "non-existent");
@@ -119,6 +120,7 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_OptimalAlgorithm_UsesOptimalStrategy() {
+        setUp();
         EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
         CO2Intensity co2AtPlugIn = new CO2Intensity(1L, plugInTime, "DK1", 200.0);
         ScheduleResult expectedScheduleResult = new ScheduleResult(List.of(), 9.0, 90.0);
@@ -128,8 +130,8 @@ class SchedulingServiceTests {
         when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
             "DK1", plugInTime, departureTime)).thenReturn(List.of(co2AtPlugIn));
 
-        when(strategies.get("optimal")).thenReturn(mockStrategy);
-        when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
+        strategies.put("optimal", mockStrategy);
+        when(mockStrategy.solve(any(UserConstraints.class), any(), any()))
             .thenReturn(expectedScheduleResult);
 
         ScheduleResult actualResult = schedulingService.createSchedule(request, "optimal");
@@ -141,6 +143,7 @@ class SchedulingServiceTests {
 
         @Test
         void createSchedule_UsesCachedHistoricalPrices_WhenRequestedWindowMissing() {
+        setUp();
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
             "DK1", plugInTime, departureTime)).thenReturn(List.of());
 
@@ -159,8 +162,8 @@ class SchedulingServiceTests {
         when(co2IntensityRepository.findByPriceAreaAndTimestampUtcBetweenOrderByTimestampUtcAsc(
             "DK1", plugInTime, departureTime)).thenReturn(List.of());
 
-        when(strategies.get("naive")).thenReturn(mockStrategy);
-        when(mockStrategy.solve(any(UserConstraints.class), any(List.class), any(List.class)))
+        strategies.put("naive", mockStrategy);
+        when(mockStrategy.solve(any(UserConstraints.class), any(), any()))
             .thenReturn(new ScheduleResult(List.of(), 12.0, 34.0));
 
         ScheduleResult result = schedulingService.createSchedule(request, "naive");
@@ -172,14 +175,12 @@ class SchedulingServiceTests {
 
     @Test
     void createSchedule_NoStrategiesAvailable_ThrowsException() {
+        setUp();
         EnergyPrice priceAtPlugIn = new EnergyPrice(1L, plugInTime, "DK1", 0.5);
 
         when(energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
             "DK1", plugInTime, departureTime)).thenReturn(List.of(priceAtPlugIn));
         
-        when(strategies.get("greedy")).thenReturn(null);
-        when(strategies.get("naive")).thenReturn(null);
-
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             schedulingService.createSchedule(request, "greedy");
         });

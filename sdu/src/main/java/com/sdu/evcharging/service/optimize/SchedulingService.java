@@ -467,23 +467,6 @@ public class SchedulingService {
         return shifted;
     }
 
-    private static List<CO2Intensity> shiftCo2SeriesIntoRequestedWindow(List<CO2Intensity> sourceDay, ScheduleRequest request) {
-        long slotsInWindow = Duration.between(request.plugInTime(), request.departureTime()).toHours();
-        int slots = Math.max(1, (int) slotsInWindow);
-
-        List<CO2Intensity> shifted = new ArrayList<>(slots);
-        for (int i = 0; i < slots; i++) {
-            CO2Intensity source = sourceDay.get(i % sourceDay.size());
-            shifted.add(CO2Intensity.builder()
-                    .timestampUtc(request.plugInTime().plusHours(i))
-                    .priceArea(request.priceZone())
-                    .gPerKwh(source.getGPerKwh())
-                    .build());
-        }
-
-        return shifted;
-    }
-
     private List<GridData> toHourlyCo2Data(List<CO2Intensity> co2Series) {
         if (co2Series == null || co2Series.isEmpty()) {
             return List.of();
