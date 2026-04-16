@@ -363,7 +363,7 @@ export function ScheduleChart({
       <CardContent className="px-2 pb-3 sm:px-4">
         <div className="h-[260px] w-full sm:h-[290px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: 0, bottom: 4 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 35, left: 0, bottom: 4 }}>
               {departureMarkerMs ? (
                 <ReferenceLine
                   x={departureMarkerMs}
@@ -401,11 +401,12 @@ export function ScheduleChart({
                 label={{
                   value: 'Relative Objective Score',
                   angle: 90,
-                  position: 'insideRight',
+                  position: 'center',
+                  dx: 30,
                   fill: RIGHT_AXIS_COLOR,
                   fontSize: 12,
                 }}
-                width={86}
+                width={70}
               />
               <Tooltip
                 content={({ active, payload }: TooltipContentProps) => {
