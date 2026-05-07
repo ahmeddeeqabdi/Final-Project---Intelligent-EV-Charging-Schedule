@@ -125,8 +125,23 @@ function AdminPage() {
                 <p>Objective gap mean: {benchmarkResult.objectiveGapPercent.mean.toFixed(4)}%</p>
                 <p>Cost gap mean: {benchmarkResult.costGapPercent.mean.toFixed(4)}%</p>
                 <p>CO2 gap mean: {benchmarkResult.emissionsGapPercent.mean.toFixed(4)}%</p>
-                <p>Optimal avg runtime: {benchmarkResult.runtimeMs.optimalMeanMs.toFixed(3)} ms</p>
-                <p>Greedy avg runtime: {benchmarkResult.runtimeMs.greedyMeanMs.toFixed(3)} ms</p>
+                <div className="mt-2 text-xs border-t pt-2 border-border/60">
+                  <p className="font-semibold mb-1">Latency Distribution (ms)</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="font-medium">DP (Optimal)</p>
+                      <p>Mean: {benchmarkResult.runtimeMs.optimalMeanMs.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.runtimeMs.optimalP50Ms.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.runtimeMs.optimalP95Ms.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Greedy</p>
+                      <p>Mean: {benchmarkResult.runtimeMs.greedyMeanMs.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.runtimeMs.greedyP50Ms.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.runtimeMs.greedyP95Ms.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : null}
             <div className="space-y-2 rounded-md border border-border/60 bg-background p-3 text-xs text-muted-foreground">
@@ -144,7 +159,7 @@ function AdminPage() {
                 CO2 gap: positive means Greedy emits more and DP is cleaner, negative means Greedy emits less.
               </p>
               <p>
-                Runtime: lower milliseconds is faster. Compare "Optimal avg runtime" vs "Greedy avg runtime" directly.
+                Runtime Distribution: Compare Mean, p50 (Median), and p95 (Tail Latency) between DP and Greedy to evaluate Algorithmic Latency under stress.
               </p>
             </div>
           </CardContent>

@@ -139,7 +139,13 @@ export interface AdminBenchmarkMetricSummary {
 
 export interface AdminBenchmarkRuntimeSummary {
   optimalMeanMs: number
+  optimalP50Ms: number
+  optimalP95Ms: number
+  optimalMaxMs: number
   greedyMeanMs: number
+  greedyP50Ms: number
+  greedyP95Ms: number
+  greedyMaxMs: number
   overheadDeltaMs: number
 }
 

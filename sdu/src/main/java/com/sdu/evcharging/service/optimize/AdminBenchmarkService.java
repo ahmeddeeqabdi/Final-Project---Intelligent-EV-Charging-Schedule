@@ -102,8 +102,9 @@ public class AdminBenchmarkService {
         MetricSummary objectiveSummary = MetricSummary.of(objectiveGapPercents);
         MetricSummary costSummary = MetricSummary.of(costGapPercents);
         MetricSummary emissionsSummary = MetricSummary.of(emissionsGapPercents);
-        double optimalMean = mean(optimalRuntimeMs);
-        double greedyMean = mean(greedyRuntimeMs);
+        
+        MetricSummary optimalRuntimeSummary = MetricSummary.of(optimalRuntimeMs);
+        MetricSummary greedyRuntimeSummary = MetricSummary.of(greedyRuntimeMs);
 
         return new AdminBenchmarkResponse(
                 scenarios,
@@ -114,7 +115,11 @@ public class AdminBenchmarkService {
                         costSummary.mean(), costSummary.p50(), costSummary.p95(), costSummary.max()),
                 new AdminBenchmarkResponse.MetricSummary(
                         emissionsSummary.mean(), emissionsSummary.p50(), emissionsSummary.p95(), emissionsSummary.max()),
-                new AdminBenchmarkResponse.RuntimeSummary(optimalMean, greedyMean, optimalMean - greedyMean)
+                new AdminBenchmarkResponse.RuntimeSummary(
+                        optimalRuntimeSummary.mean(), optimalRuntimeSummary.p50(), optimalRuntimeSummary.p95(), optimalRuntimeSummary.max(),
+                        greedyRuntimeSummary.mean(), greedyRuntimeSummary.p50(), greedyRuntimeSummary.p95(), greedyRuntimeSummary.max(),
+                        optimalRuntimeSummary.mean() - greedyRuntimeSummary.mean()
+                )
         );
     }
 

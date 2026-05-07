@@ -40,12 +40,21 @@ class StrategyBenchmarkRandomizedTests {
         List<Double> greedyEfficiencyLossCosts = new ArrayList<>();
         List<Double> optimalRealWorldCosts = new ArrayList<>();
         List<Double> greedyRealWorldCosts = new ArrayList<>();
+        List<Double> optimalLatenciesMs = new ArrayList<>();
+        List<Double> greedyLatenciesMs = new ArrayList<>();
 
         for (int i = 0; i < SCENARIOS; i++) {
             Scenario scenario = generateFeasibleScenario(random, i);
 
+            long startOptimal = System.nanoTime();
             ScheduleResult optimalResult = optimal.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            long endOptimal = System.nanoTime();
+            optimalLatenciesMs.add((endOptimal - startOptimal) / 1_000_000.0);
+
+            long startGreedy = System.nanoTime();
             ScheduleResult greedyResult = greedy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            long endGreedy = System.nanoTime();
+            greedyLatenciesMs.add((endGreedy - startGreedy) / 1_000_000.0);
 
             double optimalObjective = objectiveValue(
                     optimalResult.slots(),
@@ -106,12 +115,17 @@ class StrategyBenchmarkRandomizedTests {
         BenchmarkSummary greedyEfficiencyLossSummary = BenchmarkSummary.of(greedyEfficiencyLossCosts);
         BenchmarkSummary optimalRealWorldSummary = BenchmarkSummary.of(optimalRealWorldCosts);
         BenchmarkSummary greedyRealWorldSummary = BenchmarkSummary.of(greedyRealWorldCosts);
+        BenchmarkSummary optimalLatencySummary = BenchmarkSummary.of(optimalLatenciesMs);
+        BenchmarkSummary greedyLatencySummary = BenchmarkSummary.of(greedyLatenciesMs);
 
         System.out.printf(
                 "\nRandomized benchmark (seed=%d, scenarios=%d)\n"
                         + "Objective gap %% (greedy - optimal): mean=%.4f p50=%.4f p95=%.4f max=%.4f\n"
                         + "Total real-cost gap %% (g-o):         mean=%.4f p50=%.4f p95=%.4f max=%.4f\n"
-                    + "CO2 gap %% (greedy - optimal):       mean=%.4f p50=%.4f p95=%.4f max=%.4f\n"
+                        + "CO2 gap %% (greedy - optimal):       mean=%.4f p50=%.4f p95=%.4f max=%.4f\n"
+                        + "\nAlgorithmic Latency (ms)\n"
+                        + "Optimal (DP): mean=%.2f p50=%.2f p95=%.2f max=%.2f\n"
+                        + "Greedy:       mean=%.2f p50=%.2f p95=%.2f max=%.2f\n"
                         + "\nPlan Quality (mean values)\n"
                         + "Electricity-only cost: optimal=%.4f greedy=%.4f\n"
                         + "Switching events:      optimal=%.4f greedy=%.4f\n"
@@ -127,6 +141,8 @@ class StrategyBenchmarkRandomizedTests {
                 objectiveSummary.mean(), objectiveSummary.p50(), objectiveSummary.p95(), objectiveSummary.max(),
                 costSummary.mean(), costSummary.p50(), costSummary.p95(), costSummary.max(),
                 emissionsSummary.mean(), emissionsSummary.p50(), emissionsSummary.p95(), emissionsSummary.max(),
+                optimalLatencySummary.mean(), optimalLatencySummary.p50(), optimalLatencySummary.p95(), optimalLatencySummary.max(),
+                greedyLatencySummary.mean(), greedyLatencySummary.p50(), greedyLatencySummary.p95(), greedyLatencySummary.max(),
                 optimalElectricitySummary.mean(), greedyElectricitySummary.mean(),
                 optimalSwitchingSummary.mean(), greedySwitchingSummary.mean(),
                 optimalEfficiencyLossSummary.mean(), greedyEfficiencyLossSummary.mean(),
