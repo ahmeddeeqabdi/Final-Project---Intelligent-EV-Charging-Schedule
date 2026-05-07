@@ -127,7 +127,7 @@ function AdminPage() {
                 <p>CO2 gap mean: {benchmarkResult.emissionsGapPercent.mean.toFixed(4)}%</p>
                 <div className="mt-2 text-xs border-t pt-2 border-border/60">
                   <p className="font-semibold mb-1">Latency Distribution (ms)</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 mt-2">
                     <div>
                       <p className="font-medium">DP (Optimal)</p>
                       <p>Mean: {benchmarkResult.runtimeMs.optimalMeanMs.toFixed(2)}</p>
@@ -139,6 +139,18 @@ function AdminPage() {
                       <p>Mean: {benchmarkResult.runtimeMs.greedyMeanMs.toFixed(2)}</p>
                       <p>P50: {benchmarkResult.runtimeMs.greedyP50Ms.toFixed(2)}</p>
                       <p>P95: {benchmarkResult.runtimeMs.greedyP95Ms.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">MIP</p>
+                      <p>Mean: {benchmarkResult.runtimeMs.mipMeanMs.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.runtimeMs.mipP50Ms.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.runtimeMs.mipP95Ms.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Naive</p>
+                      <p>Mean: {benchmarkResult.runtimeMs.naiveMeanMs.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.runtimeMs.naiveP50Ms.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.runtimeMs.naiveP95Ms.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>

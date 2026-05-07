@@ -28,13 +28,19 @@ public class AdminBenchmarkService {
 
     private final ChargingStrategy optimalStrategy;
     private final ChargingStrategy greedyStrategy;
+    private final ChargingStrategy mipStrategy;
+    private final ChargingStrategy naiveStrategy;
 
     public AdminBenchmarkService(
             DynamicProgrammingChargingStrategy optimalStrategy,
-            GreedyChargingStrategy greedyStrategy
+            GreedyChargingStrategy greedyStrategy,
+            MipChargingStrategy mipStrategy,
+            NaiveChargingStrategy naiveStrategy
     ) {
         this.optimalStrategy = optimalStrategy;
         this.greedyStrategy = greedyStrategy;
+        this.mipStrategy = mipStrategy;
+        this.naiveStrategy = naiveStrategy;
     }
 
     public AdminBenchmarkResponse run(Integer scenariosInput, Long seedInput) {
@@ -47,7 +53,19 @@ public class AdminBenchmarkService {
         List<Double> emissionsGapPercents = new ArrayList<>();
         List<Double> optimalRuntimeMs = new ArrayList<>();
         List<Double> greedyRuntimeMs = new ArrayList<>();
+        List<Double> mipRuntimeMs = new ArrayList<>();
+        List<Double> naiveRuntimeMs = new ArrayList<>();
 
+        // 1. Warm-up Phase: Run all 50 times to force JIT and native lib loading
+        for (int i = 0; i < 50; i++) {
+            Scenario scenario = generateFeasibleScenario(random, i);
+            optimalStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            greedyStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            mipStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            naiveStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+        }
+
+        // 2. Measurement Phase
         for (int i = 0; i < scenarios; i++) {
             Scenario scenario = generateFeasibleScenario(random, i);
 
@@ -60,6 +78,16 @@ public class AdminBenchmarkService {
             ScheduleResult greedyResult = greedyStrategy.solve(
                     scenario.constraints(), scenario.priceData(), scenario.co2Data());
             double greedyMs = nanosToMs(System.nanoTime() - greedyStart);
+
+            long mipStart = System.nanoTime();
+            ScheduleResult mipResult = mipStrategy.solve(
+                    scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            double mipMs = nanosToMs(System.nanoTime() - mipStart);
+
+            long naiveStart = System.nanoTime();
+            ScheduleResult naiveResult = naiveStrategy.solve(
+                    scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            double naiveMs = nanosToMs(System.nanoTime() - naiveStart);
 
             double optimalObjective = objectiveValue(
                     optimalResult.slots(),
@@ -93,10 +121,12 @@ public class AdminBenchmarkService {
                         scenario.co2Data());
 
             objectiveGapPercents.add(percentGap(greedyObjective, optimalObjective));
-                costGapPercents.add(percentGap(greedyRealCost.totalRealWorldCost(), optimalRealCost.totalRealWorldCost()));
+            costGapPercents.add(percentGap(greedyRealCost.totalRealWorldCost(), optimalRealCost.totalRealWorldCost()));
             emissionsGapPercents.add(percentGap(greedyResult.totalPredictedEmissions(), optimalResult.totalPredictedEmissions()));
             optimalRuntimeMs.add(optimalMs);
             greedyRuntimeMs.add(greedyMs);
+            mipRuntimeMs.add(mipMs);
+            naiveRuntimeMs.add(naiveMs);
         }
 
         MetricSummary objectiveSummary = MetricSummary.of(objectiveGapPercents);
@@ -105,6 +135,8 @@ public class AdminBenchmarkService {
         
         MetricSummary optimalRuntimeSummary = MetricSummary.of(optimalRuntimeMs);
         MetricSummary greedyRuntimeSummary = MetricSummary.of(greedyRuntimeMs);
+        MetricSummary mipRuntimeSummary = MetricSummary.of(mipRuntimeMs);
+        MetricSummary naiveRuntimeSummary = MetricSummary.of(naiveRuntimeMs);
 
         return new AdminBenchmarkResponse(
                 scenarios,
@@ -118,6 +150,8 @@ public class AdminBenchmarkService {
                 new AdminBenchmarkResponse.RuntimeSummary(
                         optimalRuntimeSummary.mean(), optimalRuntimeSummary.p50(), optimalRuntimeSummary.p95(), optimalRuntimeSummary.max(),
                         greedyRuntimeSummary.mean(), greedyRuntimeSummary.p50(), greedyRuntimeSummary.p95(), greedyRuntimeSummary.max(),
+                        mipRuntimeSummary.mean(), mipRuntimeSummary.p50(), mipRuntimeSummary.p95(), mipRuntimeSummary.max(),
+                        naiveRuntimeSummary.mean(), naiveRuntimeSummary.p50(), naiveRuntimeSummary.p95(), naiveRuntimeSummary.max(),
                         optimalRuntimeSummary.mean() - greedyRuntimeSummary.mean()
                 )
         );

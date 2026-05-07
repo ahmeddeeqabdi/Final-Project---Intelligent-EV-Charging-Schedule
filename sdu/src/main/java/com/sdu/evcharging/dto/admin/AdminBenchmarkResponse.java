@@ -14,6 +14,8 @@ public record AdminBenchmarkResponse(
     public record RuntimeSummary(
             double optimalMeanMs, double optimalP50Ms, double optimalP95Ms, double optimalMaxMs,
             double greedyMeanMs, double greedyP50Ms, double greedyP95Ms, double greedyMaxMs,
+            double mipMeanMs, double mipP50Ms, double mipP95Ms, double mipMaxMs,
+            double naiveMeanMs, double naiveP50Ms, double naiveP95Ms, double naiveMaxMs,
             double overheadDeltaMs
     ) {
     }

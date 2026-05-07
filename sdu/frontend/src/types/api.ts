@@ -146,6 +146,14 @@ export interface AdminBenchmarkRuntimeSummary {
   greedyP50Ms: number
   greedyP95Ms: number
   greedyMaxMs: number
+  mipMeanMs: number
+  mipP50Ms: number
+  mipP95Ms: number
+  mipMaxMs: number
+  naiveMeanMs: number
+  naiveP50Ms: number
+  naiveP95Ms: number
+  naiveMaxMs: number
   overheadDeltaMs: number
 }
 
