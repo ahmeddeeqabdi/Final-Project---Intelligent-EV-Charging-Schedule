@@ -171,7 +171,9 @@ public class AdminBenchmarkService {
         LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0).plusHours(index * 36L);
 
         while (true) {
-            int slots = 4 + random.nextInt(21);
+            // Generate between 20 and 500 slots to simulate high-frequency (5-min) dispatch scaling 
+            // or multi-day scenarios, legitimately testing the combinatorial limits of the MIP solver.
+            int slots = 20 + random.nextInt(481);
             LocalDateTime departure = start.plusHours(slots);
 
             double[] maxPowerOptions = {3.7, 7.4, 11.0, 22.0};

@@ -190,15 +190,19 @@ public class GreedyChargingStrategy implements ChargingStrategy {
     }
 
     private static double calculateTotalCost(List<ChargingSlot> slots) {
-        return slots.stream()
-                .mapToDouble(slot -> slot.powerDraw() * slot.currentPrice())
-                .sum();
+        double cost = 0.0;
+        for (ChargingSlot slot : slots) {
+            cost += slot.powerDraw() * slot.currentPrice();
+        }
+        return cost;
     }
 
     private static double calculateTotalEmissions(List<ChargingSlot> slots) {
-        return slots.stream()
-                .mapToDouble(slot -> slot.powerDraw() * slot.currentCO2())
-                .sum();
+        double emissions = 0.0;
+        for (ChargingSlot slot : slots) {
+            emissions += slot.powerDraw() * slot.currentCO2();
+        }
+        return emissions;
     }
 
     private record CandidateSlot(LocalDateTime timestamp, double price, double co2) {

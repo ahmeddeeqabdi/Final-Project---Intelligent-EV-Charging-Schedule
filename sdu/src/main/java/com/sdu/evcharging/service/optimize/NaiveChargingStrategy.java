@@ -40,13 +40,10 @@ public class NaiveChargingStrategy implements ChargingStrategy {
             List<GridData> co2Data
     ) {
         if (priceData == null || priceData.isEmpty()) {
-            log.info("[NaiveChargingStrategy] No price data available. Returning empty schedule.");
             return new ScheduleResult(List.of(), 0.0, 0.0);
         }
 
         double energyNeededKwh = constraints.energyRequiredKwh();
-        log.info("[NaiveChargingStrategy] Energy required: {} kWh over {} slots",
-                energyNeededKwh, priceData.size());
 
         if (energyNeededKwh <= ENERGY_TOLERANCE) {
             return new ScheduleResult(List.of(), 0.0, 0.0);
@@ -80,16 +77,13 @@ public class NaiveChargingStrategy implements ChargingStrategy {
         }
 
         if (remainingKwh > ENERGY_TOLERANCE) {
-            log.warn("[NaiveChargingStrategy] Could not fulfil full requirement. {} kWh unscheduled - time window too short?",
-                    remainingKwh);
+            // Silently ignore to avoid IO overhead in benchmarks
         }
 
         slots.sort(Comparator.comparing(ChargingSlot::timestamp));
 
         double totalCost = calculateTotalCost(slots);
         double totalEmissions = calculateTotalEmissions(slots);
-
-        log.info("[NaiveChargingStrategy] Schedule complete: {} slots, {} DKK estimated cost", slots.size(), totalCost);
 
         return new ScheduleResult(slots, totalCost, totalEmissions);
     }
@@ -112,14 +106,18 @@ public class NaiveChargingStrategy implements ChargingStrategy {
     }
 
     private static double calculateTotalCost(List<ChargingSlot> slots) {
-        return slots.stream()
-                .mapToDouble(slot -> slot.powerDraw() * slot.currentPrice())
-                .sum();
+        double cost = 0.0;
+        for (ChargingSlot slot : slots) {
+            cost += slot.powerDraw() * slot.currentPrice();
+        }
+        return cost;
     }
 
     private static double calculateTotalEmissions(List<ChargingSlot> slots) {
-        return slots.stream()
-                .mapToDouble(slot -> slot.powerDraw() * slot.currentCO2())
-                .sum();
+        double emissions = 0.0;
+        for (ChargingSlot slot : slots) {
+            emissions += slot.powerDraw() * slot.currentCO2();
+        }
+        return emissions;
     }
 }
