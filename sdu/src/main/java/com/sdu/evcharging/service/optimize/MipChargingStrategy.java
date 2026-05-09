@@ -1,20 +1,5 @@
 package com.sdu.evcharging.service.optimize;
 
-import com.google.ortools.Loader;
-import com.google.ortools.linearsolver.MPConstraint;
-import com.google.ortools.linearsolver.MPObjective;
-import com.google.ortools.linearsolver.MPSolver;
-import com.google.ortools.linearsolver.MPVariable;
-
-import com.sdu.evcharging.domain.strategy.ChargingStrategy;
-import com.sdu.evcharging.domain.strategy.GridData;
-import com.sdu.evcharging.domain.strategy.UserConstraints;
-import com.sdu.evcharging.dto.schedule.ChargingSlot;
-import com.sdu.evcharging.dto.schedule.ScheduleResult;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,7 +7,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+
+import com.google.ortools.Loader;
+import com.google.ortools.linearsolver.MPConstraint;
+import com.google.ortools.linearsolver.MPObjective;
+import com.google.ortools.linearsolver.MPSolver;
+import com.google.ortools.linearsolver.MPVariable;
+import com.sdu.evcharging.domain.strategy.ChargingStrategy;
+import com.sdu.evcharging.domain.strategy.GridData;
+import com.sdu.evcharging.domain.strategy.UserConstraints;
+import com.sdu.evcharging.dto.schedule.ChargingSlot;
+import com.sdu.evcharging.dto.schedule.ScheduleResult;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component("mip")

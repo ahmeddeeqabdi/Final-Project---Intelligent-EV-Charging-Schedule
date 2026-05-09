@@ -208,8 +208,9 @@ public class AdminBenchmarkService {
             double co2Base = 80.0 + random.nextDouble() * 320.0;
 
             for (int h = 0; h < slots; h++) {
-                LocalDateTime ts = start.plusHours(h);
-                double dailyShape = 0.5 + 0.5 * Math.sin((2.0 * Math.PI * h) / 24.0);
+                // 15-minute resolution
+                LocalDateTime ts = start.plusMinutes(h * 15L);
+                double dailyShape = 0.5 + 0.5 * Math.sin((2.0 * Math.PI * (h / 4.0)) / 24.0);
                 double price = Math.max(0.02, priceBase + (dailyShape * 0.18) + (random.nextDouble() - 0.5) * 0.10);
                 double co2 = Math.max(20.0, co2Base + ((1.0 - dailyShape) * 140.0) + (random.nextDouble() - 0.5) * 120.0);
                 priceData.add(new GridData(ts, price));
