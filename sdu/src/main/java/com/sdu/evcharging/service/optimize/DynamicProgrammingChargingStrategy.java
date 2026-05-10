@@ -228,10 +228,17 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
                             continue;
                         }
 
-                        double energyAddedKwh = k * STEP_SIZE_KWH;
                         double soc = maxCapacityKwh <= ENERGY_TOLERANCE
                                 ? 0.0
                                 : clamp01((ePrev * STEP_SIZE_KWH) / maxCapacityKwh);
+                                
+                        double energyAddedKwh = k * STEP_SIZE_KWH;
+                        double baseMaxPower = (maxStepsPerSlot * STEP_SIZE_KWH) / SLOT_DURATION_HOURS;
+                        int maxStepsAllowed = (int) (maxChargingPowerAtSoc(soc, baseMaxPower) / STEP_SIZE_KWH);
+                        if (k > maxStepsAllowed) {
+                            continue; // Exceeds CC/CV power taper limits
+                        }
+
                         double efficiency = socToEfficiency(soc);
                         double transitionCost = previousCost
                                 + ((slot.weightedScore() * energyAddedKwh * SLOT_DURATION_HOURS) / efficiency);
@@ -403,8 +410,25 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
     }
 
     private static double socToEfficiency(double soc) {
-        double eff = EFFICIENCY_MAX - (soc * (EFFICIENCY_MAX - EFFICIENCY_MIN));
-        return Math.max(EFFICIENCY_MIN, Math.min(EFFICIENCY_MAX, eff));
+        // CC/CV curve: 90% up to 80% SoC, then steep linear drop down to 70% at 100% SoC
+        if (soc <= 0.80) {
+            return 0.90;
+        } else {
+            return Math.max(0.70, 0.90 - (soc - 0.80));
+        }
+    }
+
+    private static double maxChargingPowerAtSoc(double soc, double baseMaxPower) {
+        // Power tapering curve (Constant Voltage phase limits power)
+        if (soc <= 0.80) {
+            return baseMaxPower; // Full power allowed in CC phase
+        } else if (soc >= 0.98) {
+            return Math.min(baseMaxPower, 2.0); // Extreme throttle at the very top (2kW max)
+        } else {
+            // Linear throttle from baseMaxPower down to 2.0kW between 80% and 98% SoC
+            double throttleCurve = baseMaxPower - ((soc - 0.80) / 0.18) * (baseMaxPower - 2.0);
+            return Math.min(baseMaxPower, Math.max(2.0, throttleCurve));
+        }
     }
 
     private static double calculateTotalCost(List<ChargingSlot> slots) {
