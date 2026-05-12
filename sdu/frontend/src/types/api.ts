@@ -137,31 +137,18 @@ export interface AdminBenchmarkMetricSummary {
   max: number
 }
 
-export interface AdminBenchmarkRuntimeSummary {
-  optimalMeanMs: number
-  optimalP50Ms: number
-  optimalP95Ms: number
-  optimalMaxMs: number
-  greedyMeanMs: number
-  greedyP50Ms: number
-  greedyP95Ms: number
-  greedyMaxMs: number
-  mipMeanMs: number
-  mipP50Ms: number
-  mipP95Ms: number
-  mipMaxMs: number
-  naiveMeanMs: number
-  naiveP50Ms: number
-  naiveP95Ms: number
-  naiveMaxMs: number
-  overheadDeltaMs: number
+export interface StrategyMetrics {
+  objective: AdminBenchmarkMetricSummary
+  cost: AdminBenchmarkMetricSummary
+  emissions: AdminBenchmarkMetricSummary
+  runtimeMs: AdminBenchmarkMetricSummary
 }
 
 export interface AdminBenchmarkResponse {
   scenarios: number
   seed: number
-  objectiveGapPercent: AdminBenchmarkMetricSummary
-  costGapPercent: AdminBenchmarkMetricSummary
-  emissionsGapPercent: AdminBenchmarkMetricSummary
-  runtimeMs: AdminBenchmarkRuntimeSummary
+  optimal: StrategyMetrics
+  greedy: StrategyMetrics
+  mip: StrategyMetrics
+  naive: StrategyMetrics
 }

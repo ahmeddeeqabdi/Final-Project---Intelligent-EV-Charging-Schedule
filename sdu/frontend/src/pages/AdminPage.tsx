@@ -18,6 +18,14 @@ function AdminPage() {
   const [zone, setZone] = useState<PriceZone>('DK1')
 
   const [benchmarkResult, setBenchmarkResult] = useState<AdminBenchmarkResponse | null>(null)
+  const [baselineStrategy, setBaselineStrategy] = useState<'naive' | 'greedy'>('naive')
+  const [targetStrategy, setTargetStrategy] = useState<'optimal' | 'mip'>('optimal')
+
+  // Gap formula helper (Baseline - Target) / |Target| * 100
+  const computeGap = (baselineValue: number, targetValue: number) => {
+    const denom = Math.max(Math.abs(targetValue), 1e-9);
+    return ((baselineValue - targetValue) / denom) * 100.0;
+  }
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null)
   const [syncError, setSyncError] = useState<string | null>(null)
@@ -118,39 +126,66 @@ function AdminPage() {
               <p className="text-sm text-destructive">{benchmarkError}</p>
             ) : null}
             {benchmarkResult ? (
-              <div className="space-y-1 rounded-md border border-border/60 bg-muted/40 p-3 text-sm">
+              <div className="space-y-3 rounded-md border border-border/60 bg-muted/40 p-3 text-sm">
                 <p>
                   Seed: <strong>{benchmarkResult.seed}</strong> | Scenarios: <strong>{benchmarkResult.scenarios}</strong>
                 </p>
-                <p>Objective gap mean: {benchmarkResult.objectiveGapPercent.mean.toFixed(4)}%</p>
-                <p>Cost gap mean: {benchmarkResult.costGapPercent.mean.toFixed(4)}%</p>
-                <p>CO2 gap mean: {benchmarkResult.emissionsGapPercent.mean.toFixed(4)}%</p>
+                <div className="flex gap-4">
+                  <div className="flex flex-col">
+                    <label className="text-xs font-semibold">Baseline:</label>
+                    <select className="border border-border bg-background p-1 text-xs" value={baselineStrategy} onChange={e => setBaselineStrategy(e.target.value as any)}>
+                      <option value="naive">Naive</option>
+                      <option value="greedy">Greedy</option>
+                      <option value="mip">MIP</option>
+                      <option value="optimal">DP (Optimal)</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-semibold">Target:</label>
+                    <select className="border border-border bg-background p-1 text-xs" value={targetStrategy} onChange={e => setTargetStrategy(e.target.value as any)}>
+                      <option value="optimal">DP (Optimal)</option>
+                      <option value="mip">MIP</option>
+                      <option value="greedy">Greedy</option>
+                      <option value="naive">Naive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-2 space-y-1 p-2 bg-background border border-border/60">
+                  <p className="font-semibold text-xs border-b border-border/60 pb-1 mb-2">
+                    Comparative Gap ({baselineStrategy.toUpperCase()} vs {targetStrategy.toUpperCase()})
+                  </p>
+                  <p>Objective gap mean: {computeGap(benchmarkResult[baselineStrategy].objective.mean, benchmarkResult[targetStrategy].objective.mean).toFixed(4)}%</p>
+                  <p>Cost gap mean: {computeGap(benchmarkResult[baselineStrategy].cost.mean, benchmarkResult[targetStrategy].cost.mean).toFixed(4)}%</p>
+                  <p>CO2 gap mean: {computeGap(benchmarkResult[baselineStrategy].emissions.mean, benchmarkResult[targetStrategy].emissions.mean).toFixed(4)}%</p>
+                </div>
+
                 <div className="mt-2 text-xs border-t pt-2 border-border/60">
                   <p className="font-semibold mb-1">Latency Distribution (ms)</p>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <div>
                       <p className="font-medium">DP (Optimal)</p>
-                      <p>Mean: {benchmarkResult.runtimeMs.optimalMeanMs.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.runtimeMs.optimalP50Ms.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.runtimeMs.optimalP95Ms.toFixed(2)}</p>
+                      <p>Mean: {benchmarkResult.optimal.runtimeMs.mean.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.optimal.runtimeMs.p50.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.optimal.runtimeMs.p95.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="font-medium">Greedy</p>
-                      <p>Mean: {benchmarkResult.runtimeMs.greedyMeanMs.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.runtimeMs.greedyP50Ms.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.runtimeMs.greedyP95Ms.toFixed(2)}</p>
+                      <p>Mean: {benchmarkResult.greedy.runtimeMs.mean.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.greedy.runtimeMs.p50.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.greedy.runtimeMs.p95.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="font-medium">MIP</p>
-                      <p>Mean: {benchmarkResult.runtimeMs.mipMeanMs.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.runtimeMs.mipP50Ms.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.runtimeMs.mipP95Ms.toFixed(2)}</p>
+                      <p>Mean: {benchmarkResult.mip.runtimeMs.mean.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.mip.runtimeMs.p50.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.mip.runtimeMs.p95.toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="font-medium">Naive</p>
-                      <p>Mean: {benchmarkResult.runtimeMs.naiveMeanMs.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.runtimeMs.naiveP50Ms.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.runtimeMs.naiveP95Ms.toFixed(2)}</p>
+                      <p>Mean: {benchmarkResult.naive.runtimeMs.mean.toFixed(2)}</p>
+                      <p>P50: {benchmarkResult.naive.runtimeMs.p50.toFixed(2)}</p>
+                      <p>P95: {benchmarkResult.naive.runtimeMs.p95.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -159,19 +194,16 @@ function AdminPage() {
             <div className="space-y-2 rounded-md border border-border/60 bg-background p-3 text-xs text-muted-foreground">
               <p className="font-semibold text-foreground">How to read benchmark numbers</p>
               <p>
-                Gap metrics are computed as (Greedy - DP) / |DP| * 100, so the sign tells you which strategy is better.
+                Gap metrics are computed as (Baseline - Target) / |Target| * 100
               </p>
               <p>
-                Objective gap: positive means DP has lower objective (better), negative means Greedy has lower objective.
+                Objective gap: positive means Target has lower objective (better), negative means Baseline has lower objective.
               </p>
               <p>
-                Cost gap: positive means Greedy is more expensive and DP is cheaper, negative means Greedy is cheaper.
+                Cost gap: positive means Baseline is more expensive and Target is cheaper.
               </p>
               <p>
-                CO2 gap: positive means Greedy emits more and DP is cleaner, negative means Greedy emits less.
-              </p>
-              <p>
-                Runtime Distribution: Compare Mean, p50 (Median), and p95 (Tail Latency) between DP and Greedy to evaluate Algorithmic Latency under stress.
+                CO2 gap: positive means Baseline emits more and Target is cleaner.
               </p>
             </div>
           </CardContent>
