@@ -4,26 +4,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: '#E0DDD5', // Muted off-white structural borders
+        input: '#E0DDD5',
+        ring: '#1A1A1A',
+        background: '#F4F1EA', // Warm off-white
+        foreground: '#1A1A1A', // Charcoal text
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: '#D95C14', // Burnt Orange
+          foreground: '#F4F1EA',
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: '#EAE6DB',
+          foreground: '#1A1A1A',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: '#E0DDD5',
+          foreground: '#5C5C5C',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: '#F7F5F0',
+          foreground: '#1A1A1A',
         },
         warning: {
           DEFAULT: 'hsl(var(--warning))',
@@ -31,16 +31,19 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: '0px',
+        md: '0px',
+        sm: '0px',
       },
       fontFamily: {
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"IBM Plex Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        handwriting: ['"Caveat"', 'cursive'],
       },
       boxShadow: {
         soft: '0 18px 35px rgba(15, 73, 66, 0.12)',
+        hard: '3px 3px 0px 0px rgba(26,26,26,1)',
+        'hard-sm': '2px 2px 0px 0px rgba(26,26,26,1)',
       },
     },
   },

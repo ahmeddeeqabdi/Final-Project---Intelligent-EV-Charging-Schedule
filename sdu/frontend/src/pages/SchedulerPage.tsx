@@ -157,41 +157,52 @@ function SchedulerPage() {
         }}
       />
       <div className="mx-auto max-w-7xl px-4 pb-4 pt-3 sm:px-6 lg:px-8">
-        <header className="mb-4 rounded-lg border border-border/50 bg-card/80 p-4 shadow-soft backdrop-blur sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                Intelligent EV Charging Scheduler
-              </p>
-              <h1 className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
-                Balance cost and sustainability with adaptive charging
+        <header className="mb-8 border-b-4 border-foreground pb-6 relative mt-6">
+          <div className="absolute top-0 right-0 -mr-2 mt-4 -rotate-[8deg] z-10 pointer-events-none">
+            <span className="font-handwriting text-3xl text-[#D95C14] opacity-90 select-none">
+              v2.0 Beta
+            </span>
+          </div>
+          <div className="flex flex-wrap items-start justify-between gap-3 relative">
+            <div className="max-w-4xl">
+              <div className="flex items-center gap-4">
+                <span className="inline-block border-2 border-foreground px-2 py-0.5 font-sans text-xs font-bold uppercase tracking-widest bg-foreground text-background shadow-hard-sm">
+                  System Active
+                </span>
+                <p className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  EV Charging Scheduler
+                </p>
+              </div>
+              <h1 className="mt-4 font-display text-4xl font-bold uppercase tracking-tighter text-foreground sm:text-5xl md:text-6xl">
+                Adaptive Energy Routing
               </h1>
-              <p className="mt-2 max-w-3xl text-sm text-muted-foreground sm:text-base">
-                Build a charging plan that targets your desired departure state of charge while optimizing spot prices and
-                carbon intensity.
+              <p className="mt-4 font-sans text-sm font-medium text-foreground max-w-2xl leading-relaxed border-l-2 border-[#D95C14] pl-4">
+                Balance spot prices and grid sustainability constraints to formulate an optimized vehicle energy plan before mandatory departure limits.
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">Signed in as {user?.email}</p>
+              <p className="mt-4 text-xs font-bold tracking-widest uppercase text-muted-foreground">Operator: {user?.email}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11 min-w-11 px-3"
+            <div className="flex items-center gap-2 self-start flex-col items-end">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shadow-hard-sm border-2 border-foreground"
                 onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
                 aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                 title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button type="button" variant="secondary" className="min-h-11" onClick={logout}>
+              <Button type="button" variant="outline" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                Terminate
               </Button>
               {user?.role === 'ADMIN' ? (
-                <Button asChild type="button" variant="secondary" className="min-h-11">
+                <Button asChild type="button" variant="outline" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold">
                   <Link to="/admin">Admin tools</Link>
                 </Button>
               ) : null}
+              </div>
             </div>
           </div>
         </header>

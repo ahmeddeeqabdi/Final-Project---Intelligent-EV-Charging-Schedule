@@ -131,75 +131,71 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base sm:text-lg">Plan Breakdown</CardTitle>
-        <CardDescription>
+    <div className="pt-8">
+      <div className="mb-6">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground">Plan Breakdown</h3>
+        <p className="font-sans text-sm text-muted-foreground mt-1">
           Slot-by-slot economics and sustainability for the selected charging windows.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-0">
-        <div>
-          <section>
-            <div className="overflow-x-auto rounded-lg border border-border/60">
-              <table className="min-w-full divide-y divide-border/60 text-sm">
-                <thead className="bg-muted/30 text-xs uppercase tracking-[0.06em] text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-1.5 text-left">Window</th>
-                    <th className="px-3 py-1.5 text-right">Power</th>
-                    <th className="px-3 py-1.5 text-right">Energy</th>
-                    <th className="px-3 py-1.5 text-right">Price</th>
-                    <th className="px-3 py-1.5 text-right">CO2</th>
-                    <th className="px-3 py-1.5 text-right">Cost</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {rows.map((row) => (
-                    <tr key={row.timestampMs} className="bg-card/40">
-                      <td className="whitespace-nowrap px-3 py-1.5 font-medium text-foreground">
-                        {row.startLabel} - {row.endLabel}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
-                        {decimalFormatter.format(row.powerKw)} kW
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
-                        {decimalFormatter.format(row.energyKwh)} kWh
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
-                        {decimalFormatter.format(row.priceDkkPerKwh)} kr/kWh
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-right text-foreground">
-                        {decimalFormatter.format(row.co2PerKwh)} g/kWh
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-right font-medium text-foreground">
-                        {currencyFormatter.format(row.costDkk)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="border-t border-border/60 bg-muted/20">
-                  <tr>
-                    <td className="px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                      Totals
-                    </td>
-                    <td className="px-3 py-1.5 text-right text-foreground">-</td>
-                    <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold text-foreground">
-                      {decimalFormatter.format(totals.energy)} kWh
-                    </td>
-                    <td className="px-3 py-1.5 text-right text-foreground">-</td>
-                    <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold text-foreground">
-                      {decimalFormatter.format(totals.co2)} gCO2
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold text-foreground">
-                      {currencyFormatter.format(totals.cost)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </section>
+        </p>
+      </div>
+      <div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm tabular-nums border-collapse">
+            <thead className="text-xs uppercase tracking-[0.1em] text-muted-foreground border-b-2 border-foreground">
+              <tr>
+                <th className="py-3 pr-4 text-left font-semibold">Window</th>
+                <th className="py-3 px-4 text-right font-semibold">Power</th>
+                <th className="py-3 px-4 text-right font-semibold">Energy</th>
+                <th className="py-3 px-4 text-right font-semibold">Price</th>
+                <th className="py-3 px-4 text-right font-semibold">CO2</th>
+                <th className="py-3 pl-4 text-right font-semibold">Cost</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E0DDD5]">
+              {rows.map((row) => (
+                <tr key={row.timestampMs}>
+                  <td className="whitespace-nowrap py-3 pr-4 text-left font-medium text-foreground">
+                    {row.startLabel} - {row.endLabel}
+                  </td>
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                    {decimalFormatter.format(row.powerKw)} kW
+                  </td>
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                    {decimalFormatter.format(row.energyKwh)} kWh
+                  </td>
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                    {decimalFormatter.format(row.priceDkkPerKwh)} kr/kWh
+                  </td>
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                    {decimalFormatter.format(row.co2PerKwh)} g/kWh
+                  </td>
+                  <td className="whitespace-nowrap py-3 pl-4 text-right font-semibold text-foreground">
+                    {currencyFormatter.format(row.costDkk)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-foreground font-bold text-foreground">
+                <td className="py-4 pr-4 text-left uppercase tracking-[0.1em] text-xs">
+                  Totals
+                </td>
+                <td className="py-4 px-4 text-right">-</td>
+                <td className="whitespace-nowrap py-4 px-4 text-right">
+                  {decimalFormatter.format(totals.energy)} kWh
+                </td>
+                <td className="py-4 px-4 text-right">-</td>
+                <td className="whitespace-nowrap py-4 px-4 text-right">
+                  {decimalFormatter.format(totals.co2)} gCO2
+                </td>
+                <td className="whitespace-nowrap py-4 pl-4 text-right text-lg">
+                  {currencyFormatter.format(totals.cost)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

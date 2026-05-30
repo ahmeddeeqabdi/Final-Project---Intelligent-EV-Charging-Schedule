@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { SlidersHorizontal } from 'lucide-react'
+import { MixerHorizontalIcon } from '@radix-ui/react-icons'
 import {
   Accordion,
   AccordionContent,
@@ -31,16 +31,16 @@ export function ResponsiveDashboard({ constraints, content }: ResponsiveDashboar
   }, [])
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
+    <div className="grid gap-6 lg:grid-cols-[1fr_2.5fr] xl:grid-cols-[380px_1fr] lg:gap-12">
       <section className="lg:col-span-1">
         {isDesktop ? (
           <div className="sticky top-6">{constraints}</div>
         ) : (
           <Accordion type="single" collapsible defaultValue="constraints">
-            <AccordionItem value="constraints" className="rounded-lg border bg-card/80 px-4 shadow-soft">
-              <AccordionTrigger className="min-h-11 py-3 text-sm font-semibold text-foreground">
+            <AccordionItem value="constraints" className="border border-[#E0DDD5] bg-[#F7F5F0] px-4 shadow-hard-sm">
+              <AccordionTrigger className="min-h-11 py-3 text-sm font-semibold tracking-wide uppercase text-foreground">
                 <span className="inline-flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4" />
+                  <MixerHorizontalIcon className="h-4 w-4" />
                   Charging Constraints
                 </span>
               </AccordionTrigger>
@@ -49,7 +49,7 @@ export function ResponsiveDashboard({ constraints, content }: ResponsiveDashboar
           </Accordion>
         )}
       </section>
-      <section className="lg:col-span-2">{content}</section>
+      <section className="lg:col-span-1 border-l-0 lg:border-l lg:border-[#E0DDD5] lg:pl-12">{content}</section>
     </div>
   )
 }

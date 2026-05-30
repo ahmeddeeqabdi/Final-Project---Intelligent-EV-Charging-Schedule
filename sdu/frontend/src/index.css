@@ -1,44 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 164 28% 96%;
-  --foreground: 171 45% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 171 45% 12%;
-  --primary: 173 76% 29%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 169 30% 91%;
-  --secondary-foreground: 171 45% 18%;
-  --muted: 171 22% 90%;
-  --muted-foreground: 171 19% 35%;
+  /* Retaining simple vars for backward-compilation if used by other elements */
   --warning: 41 96% 61%;
   --warning-foreground: 27 56% 21%;
-  --border: 171 19% 82%;
-  --input: 170 27% 88%;
-  --ring: 173 76% 29%;
-  --radius: 1rem;
 }
 
 .dark {
-  --background: 182 34% 8%;
-  --foreground: 170 28% 92%;
-  --card: 180 28% 11%;
-  --card-foreground: 170 28% 92%;
-  --primary: 171 72% 46%;
-  --primary-foreground: 177 70% 8%;
-  --secondary: 182 20% 18%;
-  --secondary-foreground: 170 20% 88%;
-  --muted: 182 19% 16%;
-  --muted-foreground: 172 12% 70%;
-  --warning: 42 89% 54%;
-  --warning-foreground: 34 100% 11%;
-  --border: 180 16% 24%;
-  --input: 180 16% 22%;
-  --ring: 171 72% 46%;
+  /* Minimal dark version mapping onto identical utilitarian tone for simplicity here */
+  color-scheme: dark;
 }
 
 * {
@@ -49,17 +23,9 @@ body {
   @apply bg-background font-sans text-foreground antialiased transition-colors duration-300;
   margin: 0;
   min-height: 100vh;
-  background-image:
-    radial-gradient(circle at 12% 16%, rgba(38, 166, 154, 0.18) 0, rgba(38, 166, 154, 0) 38%),
-    radial-gradient(circle at 88% 4%, rgba(240, 184, 72, 0.25) 0, rgba(240, 184, 72, 0) 30%),
-    linear-gradient(180deg, #f7fbf9 0%, #f2f9f7 55%, #eef7f5 100%);
-}
-
-.dark body {
-  background-image:
-    radial-gradient(circle at 12% 16%, rgba(45, 182, 170, 0.2) 0, rgba(45, 182, 170, 0) 34%),
-    radial-gradient(circle at 88% 4%, rgba(214, 166, 58, 0.16) 0, rgba(214, 166, 58, 0) 28%),
-    linear-gradient(180deg, #091817 0%, #0a1e1c 50%, #0d2623 100%);
+  /* Adds subtle global grain/noise overlaying background */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: repeat;
 }
 
 #root {

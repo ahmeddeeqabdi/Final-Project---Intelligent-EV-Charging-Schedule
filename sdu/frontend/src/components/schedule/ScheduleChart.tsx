@@ -49,10 +49,10 @@ interface MarkerBadgeProps {
   color: string
 }
 
-const POWER_COLOR = '#2DD4BF'
-const PRICE_COLOR = '#FACC15'
-const CO2_COLOR = '#A855F7'
-const RIGHT_AXIS_COLOR = '#94A3B8'
+const POWER_COLOR = '#D95C14' // Burnt Orange
+const PRICE_COLOR = '#1A1A1A' // Charcoal
+const CO2_COLOR = '#5C5C5C'   // Muted gray
+const RIGHT_AXIS_COLOR = '#1A1A1A'
 
 const twoDecimal = new Intl.NumberFormat('en-DK', {
   minimumFractionDigits: 2,
@@ -109,23 +109,10 @@ const MarkerBadge = ({ viewBox, text, color }: MarkerBadgeProps) => {
 
   const x = viewBox.x ?? 0
   const y = (viewBox.y ?? 0) - 24
-  const width = Math.max(56, text.length * 7 + 14)
 
   return (
     <g>
-      <rect
-        x={x - width / 2}
-        y={y - 14}
-        width={width}
-        height={18}
-        rx={6}
-        ry={6}
-        fill={color}
-        fillOpacity={0.2}
-        stroke={color}
-        strokeOpacity={0.75}
-      />
-      <text x={x} y={y - 1} fill={color} fontSize={11} fontWeight={700} textAnchor="middle">
+      <text x={x} y={y + 12} fill={color} fontSize={10} fontFamily='"IBM Plex Sans", sans-serif' fontWeight={600} letterSpacing="0.1em" textAnchor="middle">
         {text}
       </text>
     </g>
@@ -328,87 +315,91 @@ export function ScheduleChart({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg">Charging Plan Timeline</CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-[280px] items-center justify-center">
-          <div className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+      <div className="pt-4 lg:pt-1">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Charging Plan Timeline</h3>
+        <div className="flex min-h-[340px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0]">
+          <div className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
             <Spinner className="h-5 w-5" />
             Rendering optimized schedule...
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   if (!chartData.length) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg">Charging Plan Timeline</CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-[220px] items-center justify-center text-center text-sm text-muted-foreground">
+      <div className="pt-4 lg:pt-1">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Charging Plan Timeline</h3>
+        <div className="flex min-h-[340px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0] p-6 text-center text-sm font-semibold tracking-wide text-muted-foreground uppercase">
           Submit constraints to visualize charging power, spot prices, and CO2 intensity over time.
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base sm:text-lg">Charging Plan Timeline</CardTitle>
-      </CardHeader>
-      <CardContent className="px-2 pb-3 sm:px-4">
-        <div className="h-[260px] w-full sm:h-[290px]">
+    <div className="pt-4 lg:pt-1">
+      <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Charging Plan Timeline</h3>
+      <div className="px-0 pb-6">
+        <div className="h-[320px] w-full sm:h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 35, left: 0, bottom: 4 }}>
               {departureMarkerMs ? (
                 <ReferenceLine
                   x={departureMarkerMs}
-                  stroke="#EF4444"
-                  strokeWidth={2.5}
-                  strokeDasharray="5 4"
+                  stroke="#1A1A1A"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
                   yAxisId="left"
                   ifOverflow="extendDomain"
-                  label={<MarkerBadge text="Deadline" color="#EF4444" />}
+                  label={<MarkerBadge text="DEADLINE" color="#1A1A1A" />}
                 />
               ) : null}
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="0" vertical={false} stroke="#E0DDD5" />
               <XAxis
                 type="number"
                 dataKey="timestampMs"
                 domain={xDomain}
                 ticks={xTicks}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif', fill: '#5C5C5C' }}
                 tickFormatter={(value: number) => toLabel(new Date(value).toISOString())}
                 minTickGap={14}
+                axisLine={{ stroke: '#E0DDD5' }}
+                tickLine={{ stroke: '#E0DDD5' }}
               />
               <YAxis
                 yAxisId="left"
-                tick={{ fontSize: 12, fill: POWER_COLOR }}
-                tickFormatter={(value: number) => `${integerFormatter.format(value)} kW`}
-                label={{ value: 'Power (kW)', angle: -90, position: 'insideLeft', fill: POWER_COLOR, fontSize: 12 }}
-                width={58}
+                tick={{ fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif', fill: POWER_COLOR }}
+                tickFormatter={(value: number) => `${integerFormatter.format(value)}`}
+                label={{ value: 'POWER (kW)', angle: -90, position: 'insideLeft', fill: POWER_COLOR, fontSize: 10, fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 600, letterSpacing: '0.1em' }}
+                width={50}
+                axisLine={{ stroke: '#E0DDD5' }}
+                tickLine={{ stroke: '#E0DDD5' }}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                tick={{ fontSize: 12, fill: RIGHT_AXIS_COLOR }}
+                tick={{ fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif', fill: RIGHT_AXIS_COLOR }}
                 tickFormatter={(value: number) => `${integerFormatter.format(value)}%`}
                 domain={[0, 100]}
                 label={{
-                  value: 'Relative Objective Score',
+                  value: 'RELATIVE SCORE',
                   angle: 90,
                   position: 'center',
                   dx: 30,
                   fill: RIGHT_AXIS_COLOR,
-                  fontSize: 12,
+                  fontSize: 10,
+                  fontFamily: '"IBM Plex Sans", sans-serif',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em'
                 }}
                 width={70}
+                axisLine={{ stroke: '#E0DDD5' }}
+                tickLine={false}
               />
               <Tooltip
+                cursor={{ fill: 'rgba(224, 221, 213, 0.4)' }}
                 content={({ active, payload }: TooltipContentProps) => {
                   if (!active || !payload?.length) {
                     return null
@@ -420,82 +411,76 @@ export function ScheduleChart({
                   }
 
                   return (
-                    <div className="min-w-[220px] rounded-md border border-border/60 bg-card/95 p-3 text-sm shadow-lg backdrop-blur-sm">
-                      <p className="text-xs font-semibold text-muted-foreground">{point.intervalLabel}</p>
-                      <div className="mt-2 space-y-1.5">
-                        <p>
-                          <span className="font-medium text-muted-foreground">Action:</span> {point.actionLabel}
+                    <div className="min-w-[220px] bg-[#F7F5F0] border border-[#E0DDD5] p-3 shadow-hard-sm text-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{point.intervalLabel}</p>
+                      <div className="space-y-1.5 tabular-nums">
+                        <p className="flex justify-between">
+                          <span className="font-semibold text-foreground mr-6">Action</span> {point.actionLabel}
                         </p>
-                        <p>
-                          <span className="font-medium text-muted-foreground">Price:</span>{' '}
+                        <p className="flex justify-between">
+                          <span className="font-semibold text-foreground mr-6">Price</span>{' '}
                           {point.energyPrice == null ? 'N/A' : `${twoDecimal.format(point.energyPrice)} kr/kWh`}
                         </p>
-                        <p>
-                          <span className="font-medium text-muted-foreground">CO2:</span>{' '}
+                        <p className="flex justify-between">
+                          <span className="font-semibold text-foreground mr-6">CO2</span>{' '}
                           {point.co2Intensity == null ? 'N/A' : `${twoDecimal.format(point.co2Intensity)} g/kWh`}
                         </p>
-                        {algorithm === 'optimal' ? (
-                          <p>
-                            <span className="font-medium text-muted-foreground">Efficiency:</span>{' '}
-                            {`${twoDecimal.format(point.efficiencyPct)}%`}
-                          </p>
-                        ) : null}
                       </div>
                     </div>
                   )
                 }}
               />
-              <Legend />
+              <Legend iconType="square" wrapperStyle={{ paddingTop: '20px', fontSize: '12px', fontFamily: '"IBM Plex Sans", sans-serif' }} />
               <Area
                 yAxisId="right"
-                type="monotone"
+                type="step"
                 dataKey="energyPriceDisplay"
-                name="Price Landscape"
+                name="Price"
                 stroke="none"
                 fill={PRICE_COLOR}
-                fillOpacity={0.16}
-                legendType="none"
+                fillOpacity={0.08}
+                legendType="square"
                 connectNulls
               />
               <Area
                 yAxisId="right"
-                type="monotone"
+                type="step"
                 dataKey="co2IntensityDisplay"
-                name="CO2 Landscape"
+                name="CO2 Score"
                 stroke="none"
                 fill={CO2_COLOR}
-                fillOpacity={0.1}
-                legendType="none"
+                fillOpacity={0.08}
+                legendType="square"
                 connectNulls
               />
-              <Bar yAxisId="left" dataKey="powerValue" name="Power" fill={POWER_COLOR} radius={[6, 6, 0, 0]} />
+              <Bar yAxisId="left" dataKey="powerValue" name="Power" fill={POWER_COLOR} radius={[2, 2, 0, 0]} maxBarSize={48} />
               <Line
                 yAxisId="right"
-                type="monotone"
+                type="step"
                 dataKey="energyPriceDisplay"
                 name="Price"
                 stroke={PRICE_COLOR}
-                strokeWidth={4}
-                dot={false}
+                strokeWidth={2}
+                dot={{ r: 2, fill: PRICE_COLOR }}
                 connectNulls
               />
               <Line
                 yAxisId="right"
-                type="monotone"
+                type="step"
                 dataKey="co2IntensityDisplay"
                 name="CO2"
                 stroke={CO2_COLOR}
-                strokeWidth={4}
-                dot={false}
+                strokeWidth={2}
+                dot={{ r: 2, fill: CO2_COLOR }}
                 connectNulls
               />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <p className="mt-2 px-1 text-xs text-muted-foreground">
+        <p className="mt-6 text-xs text-muted-foreground text-center tracking-wide font-sans">
           Display normalized for comparison. Tooltip values remain raw units.
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

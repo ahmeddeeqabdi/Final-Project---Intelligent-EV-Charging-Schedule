@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { Gauge, Leaf, PlugZap } from 'lucide-react'
+import { DashboardIcon, GlobeIcon, LightningBoltIcon } from '@radix-ui/react-icons'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -104,17 +104,17 @@ export function ScheduleForm({
   }
 
   return (
-    <Card className="border-border/70 bg-card/90">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-xl">Charging Constraints</CardTitle>
+    <Card className="border-border bg-card p-6 pb-8 h-full">
+      <CardHeader className="space-y-1 px-0 pt-0">
+        <CardTitle className="font-display text-xl font-bold uppercase tracking-wide">Charging Constraints</CardTitle>
         <CardDescription>Calibrate your schedule for departure readiness and optimization strategy.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={submit}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="batteryCapacity" className="inline-flex items-center gap-1.5">
-                <PlugZap className="h-4 w-4 text-primary" />
+              <Label htmlFor="batteryCapacity" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <LightningBoltIcon className="h-4 w-4 text-foreground" />
                 Battery Size (kWh)
               </Label>
               <Input
@@ -130,8 +130,8 @@ export function ScheduleForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="maxPower" className="inline-flex items-center gap-1.5">
-                <Gauge className="h-4 w-4 text-primary" />
+              <Label htmlFor="maxPower" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <DashboardIcon className="h-4 w-4 text-foreground" />
                 Max Power (kW)
               </Label>
               <Input
@@ -145,23 +145,11 @@ export function ScheduleForm({
                 required
               />
             </div>
+          </div>
 
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="targetSoC">Target SoC (%)</Label>
-              <Input
-                id="targetSoC"
-                min={1}
-                max={100}
-                step={1}
-                type="number"
-                value={values.targetSoC}
-                onChange={(event) => updateValue('targetSoC', Number(event.target.value))}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="currentSoC">Current SoC (%)</Label>
+              <Label htmlFor="currentSoC" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current SoC (%)</Label>
               <Input
                 id="currentSoC"
                 min={0}
@@ -173,10 +161,24 @@ export function ScheduleForm({
                 required
               />
             </div>
+            
+            <div className="space-y-1.5">
+              <Label htmlFor="targetSoC" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Target SoC (%)</Label>
+              <Input
+                id="targetSoC"
+                min={1}
+                max={100}
+                step={1}
+                type="number"
+                value={values.targetSoC}
+                onChange={(event) => updateValue('targetSoC', Number(event.target.value))}
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="departureTime">Departure Deadline</Label>
+            <Label htmlFor="departureTime" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Departure Deadline</Label>
             <Input
               id="departureTime"
               type="datetime-local"
@@ -188,10 +190,10 @@ export function ScheduleForm({
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="priceZone">Price Zone</Label>
+              <Label htmlFor="priceZone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Price Zone</Label>
               <select
                 id="priceZone"
-                className="flex min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex min-h-11 w-full border border-[#E0DDD5] bg-[#F7F5F0] px-3 py-2 text-sm text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground font-semibold"
                 value={values.priceZone}
                 onChange={(event) => updateValue('priceZone', event.target.value as PriceZone)}
               >
@@ -201,10 +203,10 @@ export function ScheduleForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="algorithm">Optimization Algorithm</Label>
+              <Label htmlFor="algorithm" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Optimization Algorithm</Label>
               <select
                 id="algorithm"
-                className="flex min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex min-h-11 w-full border border-[#E0DDD5] bg-[#F7F5F0] px-3 py-2 text-sm text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground font-semibold"
                 value={values.algorithm}
                 onChange={(event) =>
                   updateValue('algorithm', event.target.value as OptimizationAlgorithm)
@@ -217,10 +219,10 @@ export function ScheduleForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="inline-flex items-center gap-1.5">
-              <Leaf className="h-4 w-4 text-primary" />
-              Price vs. Sustainability Weight
+          <div className="space-y-2 mt-4">
+            <Label className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <GlobeIcon className="h-4 w-4 text-foreground" />
+              Sustainability vs. Price Wait
             </Label>
             <Slider
               min={0}
@@ -229,59 +231,62 @@ export function ScheduleForm({
               value={[values.costWeight]}
               onValueChange={(sliderValue) => updateValue('costWeight', sliderValue[0] ?? 0.5)}
             />
-            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-              <span>0.0 Min CO2</span>
-              <span>{values.costWeight.toFixed(2)}</span>
-              <span>1.0 Min Cost</span>
+            <div className="flex items-center justify-between text-xs font-semibold tabular-nums text-muted-foreground uppercase tracking-widest">
+              <span>Min CO2</span>
+              <span className="text-foreground border border-[#E0DDD5] px-2 py-0.5 shadow-hard-sm">{values.costWeight.toFixed(2)}</span>
+              <span>Min Cost</span>
             </div>
           </div>
 
-          <div className="space-y-1.5 rounded-md border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
-            <p>
-              Energy needed: <span className="font-semibold text-foreground">{energyNeeded.toFixed(1)} kWh</span>
-            </p>
-            <p>
-              Estimated charging duration at max power:{' '}
-              <span className="font-semibold text-foreground">{formatHours(estimatedHours)}</span>
-            </p>
-            <p>
-              Time remaining until departure:{' '}
-              <span className="font-semibold text-foreground">{formatHours(availableHours)}</span>
-            </p>
+          <div className="space-y-2 border-t-2 border-foreground mt-4 pt-4 text-xs font-sans tabular-nums text-foreground">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold uppercase tracking-wider text-muted-foreground">Energy needed</span>
+              <span className="font-bold text-sm">{energyNeeded.toFixed(1)} kWh</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-semibold uppercase tracking-wider text-muted-foreground">Duration (Max Pwr)</span>
+              <span className="font-bold text-sm">{formatHours(estimatedHours)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-semibold uppercase tracking-wider text-muted-foreground">Time until departure</span>
+              <span className="font-bold text-sm bg-foreground text-background px-1">{formatHours(availableHours)}</span>
+            </div>
           </div>
 
           {validationErrors.length ? (
-            <div className="space-y-1.5 rounded-md border border-warning/50 bg-warning/20 p-3 text-xs text-warning-foreground">
+            <div className="space-y-1.5 border-l-4 border-[#D95C14] bg-[#EAE6DB] p-3 text-xs font-semibold text-foreground">
               {validationErrors.map((error) => (
                 <p key={error}>{error}</p>
               ))}
             </div>
           ) : null}
 
-          <Button
-            type="submit"
-            className={cn('w-full min-h-11 text-sm sm:text-base')}
-            disabled={isSubmitting || isFormInvalid}
-          >
-            {isSubmitting ? (
-              <span className="inline-flex items-center gap-2">
-                <Spinner className="h-4 w-4 text-primary-foreground" />
-                Building schedule...
-              </span>
-            ) : (
-              'Generate Charging Plan'
-            )}
-          </Button>
+          <div className="mt-auto pt-8 flex flex-col gap-3">
+            <Button
+              type="submit"
+              className={cn('w-full min-h-12 text-sm sm:text-base tracking-widest uppercase')}
+              disabled={isSubmitting || isFormInvalid}
+            >
+              {isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Spinner className="h-4 w-4 text-primary-foreground" />
+                  Generating...
+                </span>
+              ) : (
+                'Generate Plan'
+              )}
+            </Button>
 
-          <Button
-            type="button"
-            variant="secondary"
-            className={cn('w-full min-h-11 text-sm sm:text-base')}
-            disabled={isSavingDefaults}
-            onClick={() => onSaveDefaults?.(values)}
-          >
-            {isSavingDefaults ? 'Saving defaults...' : 'Save As Defaults'}
-          </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className={cn('w-full min-h-11 text-xs tracking-widest uppercase')}
+              disabled={isSavingDefaults}
+              onClick={() => onSaveDefaults?.(values)}
+            >
+              {isSavingDefaults ? 'Saving...' : 'Save Defaults'}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
