@@ -267,9 +267,9 @@ public class AdminBenchmarkService {
         return objective;
     }
 
-    private static double percentGap(double candidate, double baseline) {
-        double denom = Math.max(Math.abs(baseline), EPS);
-        return ((candidate - baseline) / denom) * 100.0;
+    private static double percentGap(double baselineValue, double targetValue) {
+        double denom = Math.max(Math.abs(baselineValue), EPS);
+        return ((baselineValue - targetValue) / denom) * 100.0;
     }
 
     private static double nanosToMs(long nanos) {

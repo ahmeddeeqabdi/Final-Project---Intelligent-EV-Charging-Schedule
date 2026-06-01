@@ -263,9 +263,10 @@ class StrategyBenchmarkRandomizedTests {
         return objective;
     }
 
-    private static double percentGap(double candidate, double baseline) {
-        double denom = Math.max(Math.abs(baseline), EPS);
-        return ((candidate - baseline) / denom) * 100.0;
+    // Calculates percentage savings of target relative to baseline: (baselineValue - targetValue) / |baselineValue| * 100
+    private static double percentGap(double baselineValue, double targetValue) {
+        double denom = Math.max(Math.abs(baselineValue), EPS);
+        return ((baselineValue - targetValue) / denom) * 100.0;
     }
 
     private record Scenario(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {

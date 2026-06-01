@@ -8,10 +8,10 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +25,9 @@ import com.sdu.evcharging.dto.schedule.ScheduleRequest;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 import com.sdu.evcharging.repository.CO2IntensityRepository;
 import com.sdu.evcharging.repository.EnergyPriceRepository;
+import com.sdu.evcharging.repository.ScheduleResultRepository;
+import com.sdu.evcharging.repository.UserRepository;
+import com.sdu.evcharging.service.ingest.DataSyncService;
 
 @ExtendWith(MockitoExtension.class)
 class SchedulingServiceTests {
@@ -35,19 +38,38 @@ class SchedulingServiceTests {
     @Mock
     private CO2IntensityRepository co2IntensityRepository;
 
-    private final Map<String, ChargingStrategy> strategies = new HashMap<>();
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private ScheduleResultRepository scheduleResultRepository;
+
+    @Mock
+    private DataSyncService dataSyncService;
+
+    private Map<String, ChargingStrategy> strategies;
 
     @Mock
     private ChargingStrategy mockStrategy;
 
-    @InjectMocks
     private SchedulingService schedulingService;
 
     private ScheduleRequest request;
     private LocalDateTime plugInTime;
     private LocalDateTime departureTime;
 
+    @BeforeEach
     void setUp() {
+        strategies = new HashMap<>();
+        schedulingService = new SchedulingService(
+                energyPriceRepository,
+                co2IntensityRepository,
+                userRepository,
+                scheduleResultRepository,
+                dataSyncService,
+                strategies
+        );
+
         plugInTime = LocalDateTime.of(2026, 3, 13, 10, 0);
         departureTime = plugInTime.plusHours(5);
         strategies.clear();
