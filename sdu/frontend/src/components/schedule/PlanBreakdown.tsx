@@ -133,15 +133,15 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   return (
     <div className="pt-4 lg:pr-2">
       <div className="mb-4">
-        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground">Plan Breakdown</h3>
-        <p className="font-sans text-base text-muted-foreground mt-1">
+        <h3 className="font-display text-[2.1rem] font-bold tracking-tight text-black">Plan Breakdown</h3>
+        <p className="mt-1 font-sans text-[1.05rem] text-black">
           Slot-by-slot economics and sustainability for the selected charging windows.
         </p>
       </div>
       <div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-base tabular-nums border-collapse">
-            <thead className="text-base uppercase tracking-[0.1em] text-muted-foreground border-b-2 border-foreground">
+          <table className="min-w-full border-collapse text-[1.05rem] tabular-nums">
+            <thead className="border-b-2 border-foreground uppercase tracking-[0.1em] text-black">
               <tr>
                 <th className="py-3 pr-4 text-left font-semibold">Window</th>
                 <th className="py-3 px-4 text-right font-semibold">Power</th>
@@ -154,30 +154,30 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
             <tbody className="divide-y divide-[#E0DDD5]">
               {rows.map((row) => (
                 <tr key={row.timestampMs}>
-                  <td className="whitespace-nowrap py-3 pr-4 text-left font-medium text-foreground">
+                  <td className="whitespace-nowrap py-3 pr-4 text-left font-medium text-black">
                     {row.startLabel} - {row.endLabel}
                   </td>
-                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-black">
                     {decimalFormatter.format(row.powerKw)} kW
                   </td>
-                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-black">
                     {decimalFormatter.format(row.energyKwh)} kWh
                   </td>
-                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-black">
                     {decimalFormatter.format(row.priceDkkPerKwh)} kr/kWh
                   </td>
-                  <td className="whitespace-nowrap py-3 px-4 text-right text-foreground">
+                  <td className="whitespace-nowrap py-3 px-4 text-right text-black">
                     {decimalFormatter.format(row.co2PerKwh)} g/kWh
                   </td>
-                  <td className="whitespace-nowrap py-3 pl-4 text-right font-semibold text-foreground">
+                  <td className="whitespace-nowrap py-3 pl-4 text-right font-semibold text-black">
                     {currencyFormatter.format(row.costDkk)}
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-foreground font-bold text-foreground">
-                <td className="py-4 pr-4 text-left uppercase tracking-[0.1em] text-base">
+            <tfoot className="text-black">
+              <tr className="border-t-2 border-foreground font-bold text-black">
+                <td className="py-4 pr-4 text-left text-[1.05rem] uppercase tracking-[0.1em]">
                   Totals
                 </td>
                 <td className="py-4 px-4 text-right">-</td>
@@ -188,7 +188,7 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
                 <td className="whitespace-nowrap py-4 px-4 text-right">
                   {decimalFormatter.format(totals.co2)} gCO2
                 </td>
-                <td className="whitespace-nowrap py-4 pl-4 text-right text-lg">
+                <td className="whitespace-nowrap py-4 pl-4 text-right text-[1.15rem]">
                   {currencyFormatter.format(totals.cost)}
                 </td>
               </tr>

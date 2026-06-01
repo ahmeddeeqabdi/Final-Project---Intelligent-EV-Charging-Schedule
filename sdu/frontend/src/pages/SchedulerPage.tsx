@@ -93,7 +93,6 @@ function SchedulerPage() {
       startTime: new Date().toISOString(),
       endTime: values.departureTime,
     })
-    setLastRequestAlgorithm(values.algorithm)
     scheduleMutation.mutate(values)
   }
 
@@ -173,12 +172,9 @@ function SchedulerPage() {
                   EV Charging Scheduler
                 </p>
               </div>
-              <h1 className="mt-3 font-display text-4xl font-extrabold uppercase tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+              <h1 className="mt-3 max-w-none whitespace-nowrap font-display text-3xl font-extrabold uppercase tracking-tighter text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
                 INTELLIGENT EV CHARGING SCHEDULER
               </h1>
-              <p className="mt-2 font-sans text-base font-semibold text-foreground max-w-3xl leading-relaxed border-l-2 border-[#D95C14] pl-4">
-                Balance spot prices and grid sustainability constraints to formulate an optimized vehicle energy plan before mandatory departure limits.
-              </p>
               <p className="mt-2 text-xs font-bold tracking-widest uppercase text-muted-foreground">Operator: {user?.email}</p>
             </div>
             <div className="flex items-center gap-2 self-start flex-col items-end">
