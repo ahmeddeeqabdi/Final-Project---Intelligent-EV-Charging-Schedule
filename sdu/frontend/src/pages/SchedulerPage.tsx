@@ -43,7 +43,7 @@ function SchedulerPage() {
     startTime: string
     endTime: string
   } | null>(null)
-  const [lastRequestAlgorithm, setLastRequestAlgorithm] = useState<ScheduleFormValues['algorithm']>('greedy')
+
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -133,7 +133,7 @@ function SchedulerPage() {
   const showStatusBanner = Boolean(schedule?.isDegradedMode && degradedBannerKey !== dismissedBannerKey)
 
   return (
-    <div className={cn('min-h-screen pb-6', showIntro && 'intro-active')}>
+    <div className={cn('min-h-screen pb-4', showIntro && 'intro-active')}>
       {showIntro ? (
         <div className="intro-overlay" aria-hidden="true">
           <div className="intro-overlay__ambient" />
@@ -156,11 +156,11 @@ function SchedulerPage() {
           }
         }}
       />
-      <div className="mx-auto max-w-7xl px-4 pb-4 pt-3 sm:px-6 lg:px-8">
-        <header className="mb-8 border-b-4 border-foreground pb-6 relative mt-6">
-          <div className="absolute top-0 right-0 -mr-2 mt-4 -rotate-[8deg] z-10 pointer-events-none">
+      <div className="mx-auto max-w-screen-2xl px-4 pb-2 pt-2 sm:px-6 lg:px-10">
+        <header className="mb-4 border-b-4 border-foreground pb-4 relative mt-3">
+          <div className="absolute top-12 right-2 -rotate-[8deg] z-10 pointer-events-none">
             <span className="font-handwriting text-3xl text-[#D95C14] opacity-90 select-none">
-              v2.0 Beta
+              Prototype
             </span>
           </div>
           <div className="flex flex-wrap items-start justify-between gap-3 relative">
@@ -173,19 +173,19 @@ function SchedulerPage() {
                   EV Charging Scheduler
                 </p>
               </div>
-              <h1 className="mt-4 font-display text-4xl font-bold uppercase tracking-tighter text-foreground sm:text-5xl md:text-6xl">
-                Adaptive Energy Routing
+              <h1 className="mt-3 font-display text-4xl font-extrabold uppercase tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+                INTELLIGENT EV CHARGING SCHEDULER
               </h1>
-              <p className="mt-4 font-sans text-sm font-medium text-foreground max-w-2xl leading-relaxed border-l-2 border-[#D95C14] pl-4">
+              <p className="mt-2 font-sans text-base font-semibold text-foreground max-w-3xl leading-relaxed border-l-2 border-[#D95C14] pl-4">
                 Balance spot prices and grid sustainability constraints to formulate an optimized vehicle energy plan before mandatory departure limits.
               </p>
-              <p className="mt-4 text-xs font-bold tracking-widest uppercase text-muted-foreground">Operator: {user?.email}</p>
+              <p className="mt-2 text-xs font-bold tracking-widest uppercase text-muted-foreground">Operator: {user?.email}</p>
             </div>
             <div className="flex items-center gap-2 self-start flex-col items-end">
               <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   className="shadow-hard-sm border-2 border-foreground"
                 onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
                 aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -193,12 +193,12 @@ function SchedulerPage() {
               >
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button type="button" variant="outline" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold" onClick={logout}>
+              <Button type="button" variant="secondary" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Terminate
               </Button>
               {user?.role === 'ADMIN' ? (
-                <Button asChild type="button" variant="outline" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold">
+                <Button asChild type="button" variant="secondary" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold">
                   <Link to="/admin">Admin tools</Link>
                 </Button>
               ) : null}
@@ -219,7 +219,7 @@ function SchedulerPage() {
             />
           }
           content={
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3">
               <ResultsSummary result={schedule} isLoading={scheduleMutation.isPending} />
               <ScheduleChart
                 slots={schedule?.slots ?? []}
@@ -227,7 +227,6 @@ function SchedulerPage() {
                 isLoading={scheduleMutation.isPending}
                 windowStart={lastRequestWindow?.startTime ?? null}
                 windowEnd={lastRequestWindow?.endTime ?? null}
-                algorithm={lastRequestAlgorithm}
               />
               <PlanBreakdown result={schedule} isLoading={scheduleMutation.isPending} />
 

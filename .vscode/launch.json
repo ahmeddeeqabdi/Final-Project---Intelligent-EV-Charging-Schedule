@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-EvChargingSchedulerApplication<sdu>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.sdu.evcharging.EvChargingSchedulerApplication",
+            "projectName": "sdu",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

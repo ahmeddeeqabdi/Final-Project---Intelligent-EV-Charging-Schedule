@@ -113,7 +113,7 @@ export function ScheduleForm({
         <form className="space-y-4" onSubmit={submit}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="batteryCapacity" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="batteryCapacity" className="inline-flex items-center gap-2 text-base font-semibold uppercase tracking-wide text-foreground">
                 <LightningBoltIcon className="h-4 w-4 text-foreground" />
                 Battery Size (kWh)
               </Label>
@@ -130,7 +130,7 @@ export function ScheduleForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="maxPower" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Label htmlFor="maxPower" className="inline-flex items-center gap-2 text-base font-semibold uppercase tracking-wide text-foreground">
                 <DashboardIcon className="h-4 w-4 text-foreground" />
                 Max Power (kW)
               </Label>
@@ -149,7 +149,7 @@ export function ScheduleForm({
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="currentSoC" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current SoC (%)</Label>
+              <Label htmlFor="currentSoC" className="text-base font-semibold uppercase tracking-wide text-foreground">Current SoC (%)</Label>
               <Input
                 id="currentSoC"
                 min={0}
@@ -163,7 +163,7 @@ export function ScheduleForm({
             </div>
             
             <div className="space-y-1.5">
-              <Label htmlFor="targetSoC" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Target SoC (%)</Label>
+              <Label htmlFor="targetSoC" className="text-base font-semibold uppercase tracking-wide text-foreground">Target SoC (%)</Label>
               <Input
                 id="targetSoC"
                 min={1}
@@ -178,7 +178,7 @@ export function ScheduleForm({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="departureTime" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Departure Deadline</Label>
+            <Label htmlFor="departureTime" className="text-base font-semibold uppercase tracking-wide text-foreground">Departure Deadline</Label>
             <Input
               id="departureTime"
               type="datetime-local"
@@ -190,10 +190,10 @@ export function ScheduleForm({
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="priceZone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Price Zone</Label>
+              <Label htmlFor="priceZone" className="text-base font-semibold uppercase tracking-wide text-foreground">Price Zone</Label>
               <select
                 id="priceZone"
-                className="flex min-h-11 w-full border border-[#E0DDD5] bg-[#F7F5F0] px-3 py-2 text-sm text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground font-semibold"
+                className="flex min-h-11 w-full border border-[#E0DDD5] bg-[#F7F5F0] px-3 py-2 text-base text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground font-semibold"
                 value={values.priceZone}
                 onChange={(event) => updateValue('priceZone', event.target.value as PriceZone)}
               >
@@ -203,10 +203,10 @@ export function ScheduleForm({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="algorithm" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Optimization Algorithm</Label>
+              <Label htmlFor="algorithm" className="text-base font-semibold uppercase tracking-wide text-foreground">Optimization Algorithm</Label>
               <select
                 id="algorithm"
-                className="flex min-h-11 w-full border border-[#E0DDD5] bg-[#F7F5F0] px-3 py-2 text-sm text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground font-semibold"
+                className="flex min-h-11 w-full border border-[#E0DDD5] bg-[#F7F5F0] px-3 py-2 text-base text-foreground shadow-hard-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground font-semibold"
                 value={values.algorithm}
                 onChange={(event) =>
                   updateValue('algorithm', event.target.value as OptimizationAlgorithm)
@@ -214,13 +214,14 @@ export function ScheduleForm({
               >
                 <option value="greedy">Greedy</option>
                 <option value="optimal">Optimal (DP)</option>
+                <option value="mip">MIP</option>
                 <option value="naive">Naive</option>
               </select>
             </div>
           </div>
 
           <div className="space-y-2 mt-4">
-            <Label className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <Label className="inline-flex items-center gap-2 text-base font-semibold uppercase tracking-wide text-foreground">
               <GlobeIcon className="h-4 w-4 text-foreground" />
               Sustainability vs. Price Wait
             </Label>
@@ -231,30 +232,30 @@ export function ScheduleForm({
               value={[values.costWeight]}
               onValueChange={(sliderValue) => updateValue('costWeight', sliderValue[0] ?? 0.5)}
             />
-            <div className="flex items-center justify-between text-xs font-semibold tabular-nums text-muted-foreground uppercase tracking-widest">
+            <div className="flex items-center justify-between text-base font-semibold tabular-nums text-muted-foreground uppercase tracking-widest">
               <span>Min CO2</span>
               <span className="text-foreground border border-[#E0DDD5] px-2 py-0.5 shadow-hard-sm">{values.costWeight.toFixed(2)}</span>
               <span>Min Cost</span>
             </div>
           </div>
 
-          <div className="space-y-2 border-t-2 border-foreground mt-4 pt-4 text-xs font-sans tabular-nums text-foreground">
+          <div className="space-y-2 border-t-2 border-foreground mt-4 pt-4 text-base font-sans tabular-nums text-foreground">
             <div className="flex justify-between items-center">
               <span className="font-semibold uppercase tracking-wider text-muted-foreground">Energy needed</span>
-              <span className="font-bold text-sm">{energyNeeded.toFixed(1)} kWh</span>
+              <span className="font-bold text-base">{energyNeeded.toFixed(1)} kWh</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-semibold uppercase tracking-wider text-muted-foreground">Duration (Max Pwr)</span>
-              <span className="font-bold text-sm">{formatHours(estimatedHours)}</span>
+              <span className="font-bold text-base">{formatHours(estimatedHours)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-semibold uppercase tracking-wider text-muted-foreground">Time until departure</span>
-              <span className="font-bold text-sm bg-foreground text-background px-1">{formatHours(availableHours)}</span>
+              <span className="font-bold text-base bg-foreground text-background px-1">{formatHours(availableHours)}</span>
             </div>
           </div>
 
           {validationErrors.length ? (
-            <div className="space-y-1.5 border-l-4 border-[#D95C14] bg-[#EAE6DB] p-3 text-xs font-semibold text-foreground">
+            <div className="space-y-1.5 border-l-4 border-[#D95C14] bg-[#EAE6DB] p-3 text-base font-semibold text-foreground">
               {validationErrors.map((error) => (
                 <p key={error}>{error}</p>
               ))}
@@ -264,7 +265,7 @@ export function ScheduleForm({
           <div className="mt-auto pt-8 flex flex-col gap-3">
             <Button
               type="submit"
-              className={cn('w-full min-h-12 text-sm sm:text-base tracking-widest uppercase')}
+              className={cn('w-full min-h-12 text-base sm:text-base tracking-widest uppercase')}
               disabled={isSubmitting || isFormInvalid}
             >
               {isSubmitting ? (
@@ -280,7 +281,7 @@ export function ScheduleForm({
             <Button
               type="button"
               variant="secondary"
-              className={cn('w-full min-h-11 text-xs tracking-widest uppercase')}
+              className={cn('w-full min-h-11 text-base tracking-widest uppercase')}
               disabled={isSavingDefaults}
               onClick={() => onSaveDefaults?.(values)}
             >

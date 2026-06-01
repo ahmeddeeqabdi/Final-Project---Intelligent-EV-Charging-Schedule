@@ -12,9 +12,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
-import { type MarketSignalPoint, type OptimizationAlgorithm, type ScheduledSlot } from '@/types/api'
+import { type MarketSignalPoint, type ScheduledSlot } from '@/types/api'
 
 interface ScheduleChartProps {
   slots: ScheduledSlot[]
@@ -22,7 +21,7 @@ interface ScheduleChartProps {
   isLoading: boolean
   windowStart?: string | null
   windowEnd?: string | null
-  algorithm?: OptimizationAlgorithm
+
 }
 
 interface ChartPoint {
@@ -125,8 +124,12 @@ export function ScheduleChart({
   isLoading,
   windowStart = null,
   windowEnd = null,
-  algorithm = 'greedy',
 }: ScheduleChartProps) {
+  const legendPayload: any[] = [
+    { value: 'Price', type: 'square', color: PRICE_COLOR },
+    { value: 'CO2 Score', type: 'square', color: CO2_COLOR },
+    { value: 'Power', type: 'square', color: POWER_COLOR },
+  ]
   const [viewportWidth, setViewportWidth] = useState<number>(() => {
     if (typeof window === 'undefined') {
       return 1280
@@ -315,10 +318,10 @@ export function ScheduleChart({
 
   if (isLoading) {
     return (
-      <div className="pt-4 lg:pt-1">
-        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Charging Plan Timeline</h3>
-        <div className="flex min-h-[340px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0]">
-          <div className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="pt-2 lg:pt-1">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
+        <div className="flex min-h-[260px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0]">
+          <div className="inline-flex min-h-11 items-center gap-2 text-base font-semibold tracking-wide text-muted-foreground uppercase">
             <Spinner className="h-5 w-5" />
             Rendering optimized schedule...
           </div>
@@ -329,9 +332,9 @@ export function ScheduleChart({
 
   if (!chartData.length) {
     return (
-      <div className="pt-4 lg:pt-1">
-        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Charging Plan Timeline</h3>
-        <div className="flex min-h-[340px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0] p-6 text-center text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="pt-2 lg:pt-1">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
+        <div className="flex min-h-[260px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0] p-6 text-center text-base font-semibold tracking-wide text-muted-foreground uppercase">
           Submit constraints to visualize charging power, spot prices, and CO2 intensity over time.
         </div>
       </div>
@@ -339,10 +342,10 @@ export function ScheduleChart({
   }
 
   return (
-    <div className="pt-4 lg:pt-1">
-      <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Charging Plan Timeline</h3>
-      <div className="px-0 pb-6">
-        <div className="h-[320px] w-full sm:h-[400px]">
+    <div className="pt-2 lg:pt-1">
+      <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
+      <div className="px-0 pb-4 lg:pr-2">
+        <div className="h-[240px] w-full sm:h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 35, left: 0, bottom: 4 }}>
               {departureMarkerMs ? (
@@ -411,8 +414,8 @@ export function ScheduleChart({
                   }
 
                   return (
-                    <div className="min-w-[220px] bg-[#F7F5F0] border border-[#E0DDD5] p-3 shadow-hard-sm text-sm">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{point.intervalLabel}</p>
+                    <div className="min-w-[220px] bg-[#F7F5F0] border border-[#E0DDD5] p-3 shadow-hard-sm text-base">
+                      <p className="text-base font-semibold uppercase tracking-wider text-muted-foreground mb-3">{point.intervalLabel}</p>
                       <div className="space-y-1.5 tabular-nums">
                         <p className="flex justify-between">
                           <span className="font-semibold text-foreground mr-6">Action</span> {point.actionLabel}
@@ -430,7 +433,11 @@ export function ScheduleChart({
                   )
                 }}
               />
-              <Legend iconType="square" wrapperStyle={{ paddingTop: '20px', fontSize: '12px', fontFamily: '"IBM Plex Sans", sans-serif' }} />
+              <Legend
+                iconType="square"
+                payload={legendPayload}
+                wrapperStyle={{ paddingTop: '20px', fontSize: '12px', fontFamily: '"IBM Plex Sans", sans-serif' }}
+              />
               <Area
                 yAxisId="right"
                 type="step"
@@ -439,7 +446,7 @@ export function ScheduleChart({
                 stroke="none"
                 fill={PRICE_COLOR}
                 fillOpacity={0.08}
-                legendType="square"
+                legendType="none"
                 connectNulls
               />
               <Area
@@ -450,7 +457,7 @@ export function ScheduleChart({
                 stroke="none"
                 fill={CO2_COLOR}
                 fillOpacity={0.08}
-                legendType="square"
+                legendType="none"
                 connectNulls
               />
               <Bar yAxisId="left" dataKey="powerValue" name="Power" fill={POWER_COLOR} radius={[2, 2, 0, 0]} maxBarSize={48} />
@@ -477,7 +484,7 @@ export function ScheduleChart({
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <p className="mt-6 text-xs text-muted-foreground text-center tracking-wide font-sans">
+        <p className="mt-6 text-base text-muted-foreground text-center tracking-wide font-sans">
           Display normalized for comparison. Tooltip values remain raw units.
         </p>
       </div>

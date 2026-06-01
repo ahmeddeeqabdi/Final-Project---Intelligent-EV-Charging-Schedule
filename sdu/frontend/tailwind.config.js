@@ -1,29 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        border: '#E0DDD5', // Muted off-white structural borders
-        input: '#E0DDD5',
-        ring: '#1A1A1A',
-        background: '#F4F1EA', // Warm off-white
-        foreground: '#1A1A1A', // Charcoal text
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#D95C14', // Burnt Orange
-          foreground: '#F4F1EA',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
-          DEFAULT: '#EAE6DB',
-          foreground: '#1A1A1A',
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         muted: {
-          DEFAULT: '#E0DDD5',
-          foreground: '#5C5C5C',
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         card: {
-          DEFAULT: '#F7F5F0',
-          foreground: '#1A1A1A',
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
         warning: {
           DEFAULT: 'hsl(var(--warning))',

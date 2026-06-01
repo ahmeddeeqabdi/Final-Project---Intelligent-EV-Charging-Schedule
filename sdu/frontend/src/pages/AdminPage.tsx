@@ -21,9 +21,9 @@ function AdminPage() {
   const [baselineStrategy, setBaselineStrategy] = useState<'naive' | 'greedy'>('naive')
   const [targetStrategy, setTargetStrategy] = useState<'optimal' | 'mip'>('optimal')
 
-  // Gap formula helper (Baseline - Target) / |Target| * 100
+  // Gap formula helper (Baseline - Target) / |Baseline| * 100
   const computeGap = (baselineValue: number, targetValue: number) => {
-    const denom = Math.max(Math.abs(targetValue), 1e-9);
+    const denom = Math.max(Math.abs(baselineValue), 1e-9);
     return ((baselineValue - targetValue) / denom) * 100.0;
   }
   const [syncResult, setSyncResult] = useState<string | null>(null)
@@ -194,7 +194,7 @@ function AdminPage() {
             <div className="space-y-2 rounded-md border border-border/60 bg-background p-3 text-xs text-muted-foreground">
               <p className="font-semibold text-foreground">How to read benchmark numbers</p>
               <p>
-                Gap metrics are computed as (Baseline - Target) / |Target| * 100
+                Gap metrics are computed as (Baseline - Target) / |Baseline| * 100
               </p>
               <p>
                 Objective gap: positive means Target has lower objective (better), negative means Baseline has lower objective.

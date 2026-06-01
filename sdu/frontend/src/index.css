@@ -5,18 +5,48 @@
 @tailwind utilities;
 
 :root {
-  /* Retaining simple vars for backward-compilation if used by other elements */
+  --background: 43 27% 94%; /* #F4F1EA */
+  --foreground: 0 0% 10%; /* #1A1A1A */
+  --border: 43 14% 85%; /* #E0DDD5 */
+  --input: 43 14% 85%; /* #E0DDD5 */
+  --ring: 0 0% 10%; /* #1A1A1A */
+  --primary: 22 83% 46%; /* #D95C14 */
+  --primary-foreground: 43 27% 94%; /* #F4F1EA */
+  --secondary: 43 22% 89%; /* #EAE6DB */
+  --secondary-foreground: 0 0% 10%; /* #1A1A1A */
+  --muted: 43 14% 85%; /* #E0DDD5 */
+  --muted-foreground: 0 0% 36%; /* #5C5C5C */
+  --card: 43 33% 96%; /* #F7F5F0 */
+  --card-foreground: 0 0% 10%; /* #1A1A1A */
   --warning: 41 96% 61%;
   --warning-foreground: 27 56% 21%;
 }
 
 .dark {
-  /* Minimal dark version mapping onto identical utilitarian tone for simplicity here */
   color-scheme: dark;
+  --background: 0 0% 10%;
+  --foreground: 43 27% 94%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 43 27% 94%;
+  --primary: 22 83% 56%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 43 27% 94%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 64%;
+  --card: 0 0% 13%;
+  --card-foreground: 43 27% 94%;
+  --warning: 41 96% 41%;
+  --warning-foreground: 27 56% 91%;
 }
 
 * {
   @apply border-border;
+}
+
+html {
+  font-size: 70%;
 }
 
 body {

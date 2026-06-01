@@ -31,7 +31,7 @@ export function ResponsiveDashboard({ constraints, content }: ResponsiveDashboar
   }, [])
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_2.5fr] xl:grid-cols-[380px_1fr] lg:gap-12">
+    <div className="grid gap-4 lg:grid-cols-[1fr_3fr] xl:grid-cols-[400px_1fr] lg:gap-8">
       <section className="lg:col-span-1">
         {isDesktop ? (
           <div className="sticky top-6">{constraints}</div>
@@ -49,7 +49,7 @@ export function ResponsiveDashboard({ constraints, content }: ResponsiveDashboar
           </Accordion>
         )}
       </section>
-      <section className="lg:col-span-1 border-l-0 lg:border-l lg:border-[#E0DDD5] lg:pl-12">{content}</section>
+      <section className="lg:col-span-1 border-l-0 lg:border-l lg:border-[#E0DDD5] lg:pl-8">{content}</section>
     </div>
   )
 }

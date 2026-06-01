@@ -100,12 +100,12 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base sm:text-lg">Plan Breakdown</CardTitle>
           <CardDescription>Creating a detailed slot-by-slot explanation...</CardDescription>
         </CardHeader>
-        <CardContent className="flex min-h-[180px] items-center justify-center">
-          <div className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+        <CardContent className="flex min-h-[140px] items-center justify-center">
+          <div className="inline-flex min-h-11 items-center gap-2 text-base text-muted-foreground">
             <Spinner className="h-5 w-5" />
             Building explanation...
           </div>
@@ -117,13 +117,13 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   if (!result || !rows.length) {
     return (
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base sm:text-lg">Plan Breakdown</CardTitle>
           <CardDescription>
             Get a slot-level plan table after generating a charging plan.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="text-base text-muted-foreground">
           No charging slots to explain yet. Try generating a schedule with a future departure time.
         </CardContent>
       </Card>
@@ -131,17 +131,17 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   }
 
   return (
-    <div className="pt-8">
-      <div className="mb-6">
+    <div className="pt-4 lg:pr-2">
+      <div className="mb-4">
         <h3 className="font-display text-2xl font-bold tracking-tight text-foreground">Plan Breakdown</h3>
-        <p className="font-sans text-sm text-muted-foreground mt-1">
+        <p className="font-sans text-base text-muted-foreground mt-1">
           Slot-by-slot economics and sustainability for the selected charging windows.
         </p>
       </div>
       <div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm tabular-nums border-collapse">
-            <thead className="text-xs uppercase tracking-[0.1em] text-muted-foreground border-b-2 border-foreground">
+          <table className="min-w-full text-base tabular-nums border-collapse">
+            <thead className="text-base uppercase tracking-[0.1em] text-muted-foreground border-b-2 border-foreground">
               <tr>
                 <th className="py-3 pr-4 text-left font-semibold">Window</th>
                 <th className="py-3 px-4 text-right font-semibold">Power</th>
@@ -177,7 +177,7 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-foreground font-bold text-foreground">
-                <td className="py-4 pr-4 text-left uppercase tracking-[0.1em] text-xs">
+                <td className="py-4 pr-4 text-left uppercase tracking-[0.1em] text-base">
                   Totals
                 </td>
                 <td className="py-4 px-4 text-right">-</td>

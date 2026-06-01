@@ -1,4 +1,4 @@
-export type OptimizationAlgorithm = 'naive' | 'greedy' | 'optimal'
+export type OptimizationAlgorithm = 'naive' | 'greedy' | 'optimal' | 'mip'
 
 export type PriceZone = 'DK1' | 'DK2'
 
