@@ -1,5 +1,7 @@
 package com.sdu.evcharging.service.auth;
 
+import java.util.Locale;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final String ONLY_ADMIN_EMAIL = "admin@example.com";
     private static final double DEFAULT_BATTERY_CAPACITY = 77.0;
     private static final double DEFAULT_MAX_POWER = 11.0;
     private static final double DEFAULT_PREFERENCE_WEIGHT = 0.5;
@@ -42,14 +43,14 @@ public class AuthService {
         User user = User.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(password))
-            .role(resolveRoleForEmail(email))
+                .role(UserRole.USER)
                 .build();
 
         user.setConstraints(UserConstraints.builder()
                 .defaultBatteryCapacity(DEFAULT_BATTERY_CAPACITY)
                 .defaultMaxPower(DEFAULT_MAX_POWER)
                 .defaultPreferenceWeight(DEFAULT_PREFERENCE_WEIGHT)
-            .priceArea(DEFAULT_PRICE_AREA)
+                .priceArea(DEFAULT_PRICE_AREA)
                 .build());
 
         User savedUser = userRepository.save(user);
@@ -70,18 +71,8 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        UserRole expectedRole = resolveRoleForEmail(user.getEmail());
-        if (user.getRole() != expectedRole) {
-            user.setRole(expectedRole);
-            user = userRepository.save(user);
-        }
-
         String token = jwtProvider.generateToken(user);
         return new AuthResponse(token, toUserSummary(user));
-    }
-
-    private static UserRole resolveRoleForEmail(String email) {
-        return ONLY_ADMIN_EMAIL.equalsIgnoreCase(email) ? UserRole.ADMIN : UserRole.USER;
     }
 
     private static UserSummaryResponse toUserSummary(User user) {
@@ -92,7 +83,7 @@ public class AuthService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
-        return email.trim().toLowerCase();
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String normalizePassword(String password) {

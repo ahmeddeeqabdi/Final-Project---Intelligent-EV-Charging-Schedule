@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Spinner } from '@/components/ui/spinner'
-import { cn } from '@/lib/utils'
-import { type OptimizationAlgorithm, type PriceZone, type ScheduleFormValues } from '@/types/api'
+import type { OptimizationAlgorithm, PriceZone, ScheduleFormValues } from '@/types/api'
 
 interface ScheduleFormProps {
   onSubmit: (values: ScheduleFormValues) => void
@@ -32,16 +31,16 @@ const getDefaultDeparture = (): string => {
 }
 
 const buildDefaultValues = (initialValues?: Partial<ScheduleFormValues>): ScheduleFormValues => ({
-    batteryCapacity: 77,
-    maxPower: 11,
-    departureTime: getDefaultDeparture(),
-    targetSoC: 80,
-    costWeight: 0.5,
-    currentSoC: 25,
-    priceZone: 'DK2',
-    algorithm: 'greedy',
-    ...initialValues,
-  })
+  batteryCapacity: 77,
+  maxPower: 11,
+  departureTime: getDefaultDeparture(),
+  targetSoC: 80,
+  costWeight: 0.5,
+  currentSoC: 25,
+  priceZone: 'DK2',
+  algorithm: 'greedy',
+  ...initialValues,
+})
 
 const formatHours = (hours: number): string => {
   if (!Number.isFinite(hours) || hours <= 0) {
@@ -67,19 +66,19 @@ export function ScheduleForm({
   isSavingDefaults = false,
 }: ScheduleFormProps) {
   const [values, setValues] = useState<ScheduleFormValues>(() => buildDefaultValues(initialValues))
+  const [referenceTime, setReferenceTime] = useState(Date.now)
 
-  const now = Date.now()
   const departureTimestamp = new Date(values.departureTime).getTime()
   const energyNeeded = Math.max(0, ((values.targetSoC - values.currentSoC) / 100) * values.batteryCapacity)
   const estimatedHours = values.maxPower > 0 ? energyNeeded / values.maxPower : Number.POSITIVE_INFINITY
   const availableHours = Number.isFinite(departureTimestamp)
-    ? Math.max(0, (departureTimestamp - now) / (1000 * 60 * 60))
+    ? Math.max(0, (departureTimestamp - referenceTime) / (1000 * 60 * 60))
     : 0
 
   const validationErrors: string[] = []
   if (!Number.isFinite(departureTimestamp)) {
     validationErrors.push('Departure time must be a valid date and time.')
-  } else if (departureTimestamp <= now) {
+  } else if (departureTimestamp <= referenceTime) {
     validationErrors.push('Departure time must be in the future.')
   }
   if (values.currentSoC > values.targetSoC) {
@@ -96,6 +95,7 @@ export function ScheduleForm({
 
   const updateValue = <K extends keyof ScheduleFormValues>(key: K, value: ScheduleFormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }))
+    setReferenceTime(Date.now())
   }
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -223,7 +223,7 @@ export function ScheduleForm({
           <div className="space-y-2 mt-4">
             <Label className="inline-flex items-center gap-2 text-base font-semibold uppercase tracking-wide text-foreground">
               <GlobeIcon className="h-4 w-4 text-foreground" />
-              Sustainability vs. Price Wait
+              Sustainability vs. Price
             </Label>
             <Slider
               min={0}
@@ -265,7 +265,7 @@ export function ScheduleForm({
           <div className="mt-auto pt-8 flex flex-col gap-3">
             <Button
               type="submit"
-              className={cn('w-full min-h-12 text-base sm:text-base tracking-widest uppercase')}
+              className="min-h-12 w-full text-base uppercase tracking-widest"
               disabled={isSubmitting || isFormInvalid}
             >
               {isSubmitting ? (
@@ -281,7 +281,7 @@ export function ScheduleForm({
             <Button
               type="button"
               variant="secondary"
-              className={cn('w-full min-h-11 text-base tracking-widest uppercase')}
+              className="min-h-11 w-full text-base uppercase tracking-widest"
               disabled={isSavingDefaults}
               onClick={() => onSaveDefaults?.(values)}
             >

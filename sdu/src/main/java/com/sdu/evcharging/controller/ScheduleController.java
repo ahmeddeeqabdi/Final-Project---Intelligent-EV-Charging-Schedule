@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sdu.evcharging.dto.schedule.ScheduleRequest;
+import com.sdu.evcharging.dto.schedule.ScheduleResult;
 import com.sdu.evcharging.security.AuthUserPrincipal;
 import com.sdu.evcharging.service.ingest.GridDataSyncService;
 import com.sdu.evcharging.service.optimize.SchedulingService;
@@ -30,21 +32,20 @@ public class ScheduleController {
     private final SchedulingService schedulingService;
     private final GridDataSyncService gridDataSyncService;
 
-
     @PostMapping
-        public ResponseEntity<com.sdu.evcharging.dto.schedule.ScheduleResult> createSchedule(
+    public ResponseEntity<ScheduleResult> createSchedule(
             @AuthenticationPrincipal AuthUserPrincipal principal,
-            @RequestBody com.sdu.evcharging.dto.schedule.ScheduleRequest request,
+            @RequestBody ScheduleRequest request,
             @RequestParam(defaultValue = "naive") String algorithm
     ) {
-            if (request.priceZone() != null && !request.priceZone().isBlank()) {
-                validateZone(request.priceZone());
-            }
+        if (request.priceZone() != null && !request.priceZone().isBlank()) {
+            normalizeAndValidateZone(request.priceZone());
+        }
 
         log.info("POST /api/v1/schedule [algorithm={}] zone={} departure={}",
                 algorithm, request.priceZone(), request.departureTime());
 
-        com.sdu.evcharging.dto.schedule.ScheduleResult schedule = schedulingService.createSchedule(
+        ScheduleResult schedule = schedulingService.createSchedule(
             request,
             algorithm,
             principal.userId()
@@ -64,10 +65,6 @@ public class ScheduleController {
 
         String summary = gridDataSyncService.syncForDate(targetDate, normalizedZone, "manual-endpoint");
         return ResponseEntity.ok(summary);
-    }
-
-    private static void validateZone(String zone) {
-        normalizeAndValidateZone(zone);
     }
 
     private static String normalizeAndValidateZone(String zone) {

@@ -26,8 +26,10 @@ scheduling:
   enabled: true
 
 app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   jwt:
-    secret: ${APP_JWT_SECRET:this-is-a-development-only-secret-key-with-more-than-thirty-two-characters}
+    secret: ${APP_JWT_SECRET}
     expiration-ms: ${APP_JWT_EXPIRATION_MS:3600000}
 
 resilience:
@@ -59,3 +61,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:local-development-only-secret-with-at-least-thirty-two-characters}

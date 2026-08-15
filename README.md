@@ -1,94 +1,40 @@
-# Intelligent EV Charging Schedule
+# Intelligent EV Charging Scheduler
 
-> An intelligent electric vehicle charging optimization system that minimizes electricity costs and carbon emissions using real-time market data and advanced algorithms.
+A full-stack application that creates EV charging schedules from electricity prices, CO2 intensity, vehicle constraints, and a user-selected optimization strategy.
 
-A full-stack application demonstrating proficiency in backend optimization algorithms, cloud-native architecture, and modern frontend development.
+## Highlights
 
-## Project Highlights
+- Four scheduling strategies: naive, greedy, dynamic programming, and mixed-integer programming
+- Live Danish market data for DK1 and DK2, with cached-data fallback
+- JWT authentication, saved user constraints, and role-protected admin tools
+- React and TypeScript dashboard with schedule and market-signal visualizations
+- Unit, integration, and randomized algorithm tests
 
-- **Multi-Algorithm Optimization:** Compare 4 distinct scheduling strategies (Naive, Greedy, Dynamic Programming, MIP)
-- **Real-Time Market Integration:** Live electricity prices and CO₂ data from Nordic energy markets
-- **Admin Analytics:** Randomized benchmark suite with 300-5000 scenario comparisons
-- **Production-Ready:** JWT auth, role-based access control, degraded mode fallback, comprehensive testing
+## Technology
 
-## Quick Links
+- Java 25 and Spring Boot 4
+- React 19, TypeScript, and Vite
+- PostgreSQL for normal operation; H2 for local development and tests
+- Google OR-Tools for mixed-integer optimization
 
-- **Main Project:** See [sdu/README.md](./sdu/README.md) for full documentation
-- **Tech Stack:** Java 21, Spring Boot, React, TypeScript, PostgreSQL, Docker
-- **Benchmark Results:** DP achieves 98%+ optimality with sub-2ms latency (p95)
+## Getting started
 
-## Repository Structure
+See [sdu/README.md](./sdu/README.md) for setup, configuration, testing, and architecture details.
 
-```
+## Repository layout
+
+```text
 .
-├── sdu/                          # Main project directory
-│   ├── src/                      # Java backend + React frontend
-│   ├── frontend/                 # React TypeScript application
-│   ├── pom.xml                   # Maven build configuration
-│   ├── compose.yaml              # Docker Compose setup
-│   └── README.md                 # Detailed project documentation
-└── README.md                     # This file
+├── sdu/
+│   ├── frontend/          React application
+│   ├── src/main/          Spring Boot application
+│   ├── src/test/          Backend test suite
+│   ├── compose.yaml       Local PostgreSQL service
+│   └── pom.xml            Maven build
+├── LICENSE
+└── README.md
 ```
 
-## Getting Started
+## License
 
-1. **Read the full documentation:**
-
-   ```bash
-   cd sdu
-   cat README.md
-   ```
-
-2. **Run locally with Docker:**
-
-   ```bash
-   cd sdu
-   docker-compose up -d
-   # Frontend: http://localhost:5173
-   # Backend: http://localhost:8080
-   ```
-
-3. **Manual setup:**
-   - Backend: `cd sdu && ./mvnw spring-boot:run`
-   - Frontend: `cd sdu/frontend && npm install && npm run dev`
-
-## Technical Achievements
-
-| Area             | Achievement                                                                  |
-| ---------------- | ---------------------------------------------------------------------------- |
-| **Algorithms**   | Implemented 4 optimization strategies with performance analysis              |
-| **Architecture** | Clean code with strategy pattern, dependency injection, and shared utilities |
-| **Testing**      | Randomized benchmarking (300-5000 scenarios), unit tests, integration tests  |
-| **Performance**  | DP achieves <2ms response time with 100% optimality guarantee                |
-| **Database**     | PostgreSQL with efficient schema for real-time market data queries           |
-| **Security**     | JWT authentication, role-based access control, input validation              |
-| **DevOps**       | Docker containerization, Maven/npm reproducible builds                       |
-| **Frontend**     | React with TypeScript, Tailwind CSS, TanStack Query                          |
-
-## Key Features
-
-- User registration & authentication
-- Personalized charging constraints
-- Real-time market data integration
-- Algorithm comparison dashboard
-- Admin benchmark & performance analytics
-- Dark/light theme support
-- Responsive mobile-friendly UI
-- Degraded mode with data fallback
-
-## Performance Metrics
-
-**Latest Benchmark Run (300 scenarios):**
-
-- DP vs Greedy cost gap: **1.47%** (both highly competitive)
-- DP latency: **0.92 ms** avg, **2.78 ms** p95
-- Greedy latency: **0.09 ms** avg, **0.26 ms** p95
-- Algorithm reliability: **99%+** scenarios solved optimally
-
-## Contact
-
-For questions or inquiries about this project, feel free to open an issue or reach out.
-
----
-
-**For detailed documentation, see [sdu/README.md](./sdu/README.md)**
+Licensed under the [MIT License](./LICENSE).

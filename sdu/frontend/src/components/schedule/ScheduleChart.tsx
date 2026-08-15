@@ -11,6 +11,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type DefaultLegendContentProps,
 } from 'recharts'
 import { Spinner } from '@/components/ui/spinner'
 import { type MarketSignalPoint, type ScheduledSlot } from '@/types/api'
@@ -125,7 +126,7 @@ export function ScheduleChart({
   windowStart = null,
   windowEnd = null,
 }: ScheduleChartProps) {
-  const legendPayload: any[] = [
+  const legendPayload: NonNullable<DefaultLegendContentProps['payload']> = [
     { value: 'Price', type: 'square', color: PRICE_COLOR },
     { value: 'CO2 Score', type: 'square', color: CO2_COLOR },
     { value: 'Power', type: 'square', color: POWER_COLOR },

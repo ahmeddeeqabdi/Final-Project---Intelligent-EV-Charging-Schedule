@@ -1,2 +1,9 @@
 # Node dependencies
 node_modules/
+
+# Local runtime data and secrets
+sdu/.data/
+sdu/src/main/resources/static/
+.env
+.env.*
+!.env.example

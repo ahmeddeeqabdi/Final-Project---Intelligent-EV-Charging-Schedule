@@ -118,17 +118,6 @@ function SchedulerPage() {
     ].join('|')
   }, [schedule])
 
-  useEffect(() => {
-    if (!degradedBannerKey) {
-      setDismissedBannerKey(null)
-      return
-    }
-
-    if (dismissedBannerKey && dismissedBannerKey !== degradedBannerKey) {
-      setDismissedBannerKey(null)
-    }
-  }, [degradedBannerKey, dismissedBannerKey])
-
   const showStatusBanner = Boolean(schedule?.isDegradedMode && degradedBannerKey !== dismissedBannerKey)
 
   return (
