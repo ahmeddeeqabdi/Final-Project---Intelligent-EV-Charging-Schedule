@@ -1,13 +1,11 @@
 package com.sdu.evcharging.service.optimize;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -32,12 +30,12 @@ public class GreedyChargingStrategy implements ChargingStrategy {
         Objects.requireNonNull(constraints, "constraints must not be null");
 
         if (priceData == null || priceData.isEmpty()) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         double energyRequiredKwh = constraints.energyRequiredKwh();
         if (energyRequiredKwh <= ENERGY_TOLERANCE) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
         int totalSteps = toRoundedSteps(energyRequiredKwh);
         int maxStepsPerSlot = toMaxStepsPerSlot(constraints.maxChargingPowerKw());
@@ -45,12 +43,12 @@ public class GreedyChargingStrategy implements ChargingStrategy {
             throw new IllegalArgumentException("Max charging power is too low for the configured step size.");
         }
 
-        Map<LocalDateTime, Double> co2ByTime = buildCo2Lookup(co2Data);
-        double defaultCo2 = averageCo2OrDefault(co2Data);
+        Map<LocalDateTime, Double> co2ByTime = StrategySupport.buildHourlyCo2Lookup(co2Data);
+        double defaultCo2 = StrategySupport.averageGridValueOrDefault(co2Data, DEFAULT_CO2);
         List<CandidateSlot> candidates = buildCandidates(constraints, priceData, co2ByTime, defaultCo2);
 
         if (candidates.isEmpty()) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         long maxDeliverableSteps = (long) maxStepsPerSlot * candidates.size();
@@ -58,7 +56,10 @@ public class GreedyChargingStrategy implements ChargingStrategy {
             throw new IllegalArgumentException("Charging window is infeasible for the required energy and max power.");
         }
 
-        Weight normalizedWeights = normalizeWeights(constraints.weightPrice(), constraints.weightCO2());
+        StrategySupport.Weight normalizedWeights = StrategySupport.normalizeWeights(
+            constraints.weightPrice(),
+            constraints.weightCO2(),
+            DEFAULT_WEIGHT);
         List<ScoredCandidateSlot> scoredCandidates = scoreAndSortCandidates(candidates, normalizedWeights);
         List<ChargingSlot> slots = allocateSlots(scoredCandidates, maxStepsPerSlot, totalSteps);
 
@@ -69,10 +70,6 @@ public class GreedyChargingStrategy implements ChargingStrategy {
         return new ScheduleResult(slots, totalCost, totalEmissions);
     }
 
-    private static ScheduleResult emptyResult() {
-        return new ScheduleResult(List.of(), 0.0, 0.0);
-    }
-
     private static int toRoundedSteps(double energyRequiredKwh) {
         double rawSteps = energyRequiredKwh / STEP_SIZE_KWH;
         return (int) Math.max(1, Math.ceil(rawSteps - STEP_ROUNDING_EPSILON));
@@ -81,27 +78,6 @@ public class GreedyChargingStrategy implements ChargingStrategy {
     private static int toMaxStepsPerSlot(double maxChargingPowerKw) {
         double maxEnergyPerSlot = maxChargingPowerKw * SLOT_DURATION_HOURS;
         return (int) Math.floor((maxEnergyPerSlot / STEP_SIZE_KWH) + STEP_ROUNDING_EPSILON);
-    }
-
-    private static Map<LocalDateTime, Double> buildCo2Lookup(List<GridData> co2Data) {
-        if (co2Data == null || co2Data.isEmpty()) {
-            return Map.of();
-        }
-
-        return co2Data.stream()
-                .filter(Objects::nonNull)
-                .filter(data -> data.timestamp() != null)
-                .collect(Collectors.groupingBy(
-                        data -> data.timestamp().truncatedTo(ChronoUnit.HOURS),
-                        Collectors.averagingDouble(GridData::value)
-                ));
-    }
-
-    private static double averageCo2OrDefault(List<GridData> co2Data) {
-        if (co2Data == null || co2Data.isEmpty()) {
-            return DEFAULT_CO2;
-        }
-        return co2Data.stream().mapToDouble(GridData::value).average().orElse(DEFAULT_CO2);
     }
 
     private static List<CandidateSlot> buildCandidates(
@@ -117,7 +93,7 @@ public class GreedyChargingStrategy implements ChargingStrategy {
                 continue;
             }
 
-            LocalDateTime hourBucket = timestamp.truncatedTo(ChronoUnit.HOURS);
+            LocalDateTime hourBucket = timestamp.withMinute(0).withSecond(0).withNano(0);
             double co2 = co2ByTime.getOrDefault(hourBucket, defaultCo2);
             candidates.add(new CandidateSlot(timestamp, pricePoint.value(), co2));
         }
@@ -125,21 +101,13 @@ public class GreedyChargingStrategy implements ChargingStrategy {
     }
 
     private static boolean isWithinWindow(LocalDateTime timestamp, UserConstraints constraints) {
-        return !timestamp.isBefore(constraints.plugInTime())
-                && timestamp.isBefore(constraints.departureTime());
+        return StrategySupport.isWithinWindow(timestamp, constraints);
     }
 
-    private static Weight normalizeWeights(double weightPriceInput, double weightCo2Input) {
-        double weightPrice = Math.max(0.0, weightPriceInput);
-        double weightCo2 = Math.max(0.0, weightCo2Input);
-        double weightSum = weightPrice + weightCo2;
-        if (weightSum <= 0.0) {
-            return new Weight(DEFAULT_WEIGHT, DEFAULT_WEIGHT);
-        }
-        return new Weight(weightPrice / weightSum, weightCo2 / weightSum);
-    }
-
-    private static List<ScoredCandidateSlot> scoreAndSortCandidates(List<CandidateSlot> candidates, Weight weight) {
+    private static List<ScoredCandidateSlot> scoreAndSortCandidates(
+            List<CandidateSlot> candidates,
+            StrategySupport.Weight weight
+    ) {
         List<Double> prices = candidates.stream().map(CandidateSlot::price).toList();
         List<Double> co2Values = candidates.stream().map(CandidateSlot::co2).toList();
         List<Double> normalizedPrices = NormalizationUtility.minMaxNormalize(prices);
@@ -209,8 +177,5 @@ public class GreedyChargingStrategy implements ChargingStrategy {
     }
 
     private record ScoredCandidateSlot(CandidateSlot slot, double score) {
-    }
-
-    private record Weight(double priceWeight, double co2Weight) {
     }
 }

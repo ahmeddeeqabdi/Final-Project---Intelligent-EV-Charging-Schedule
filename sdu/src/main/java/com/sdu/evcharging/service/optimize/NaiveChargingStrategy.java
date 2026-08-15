@@ -15,8 +15,6 @@ import com.sdu.evcharging.domain.strategy.UserConstraints;
 import com.sdu.evcharging.dto.schedule.ChargingSlot;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
-import lombok.extern.slf4j.Slf4j;
-
 
 
 
@@ -27,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @Component("naive")
-@Slf4j
 public class NaiveChargingStrategy implements ChargingStrategy {
 
     private static final double ENERGY_TOLERANCE = 1e-3;
@@ -40,13 +37,13 @@ public class NaiveChargingStrategy implements ChargingStrategy {
             List<GridData> co2Data
     ) {
         if (priceData == null || priceData.isEmpty()) {
-            return new ScheduleResult(List.of(), 0.0, 0.0);
+            return StrategySupport.emptyResult();
         }
 
         double energyNeededKwh = constraints.energyRequiredKwh();
 
         if (energyNeededKwh <= ENERGY_TOLERANCE) {
-            return new ScheduleResult(List.of(), 0.0, 0.0);
+            return StrategySupport.emptyResult();
         }
 
         Map<LocalDateTime, Double> co2ByTime = buildCo2ByTime(co2Data);
@@ -74,10 +71,6 @@ public class NaiveChargingStrategy implements ChargingStrategy {
             ));
 
             remainingKwh -= energyThisSlot;
-        }
-
-        if (remainingKwh > ENERGY_TOLERANCE) {
-            // Silently ignore to avoid IO overhead in benchmarks
         }
 
         slots.sort(Comparator.comparing(ChargingSlot::timestamp));

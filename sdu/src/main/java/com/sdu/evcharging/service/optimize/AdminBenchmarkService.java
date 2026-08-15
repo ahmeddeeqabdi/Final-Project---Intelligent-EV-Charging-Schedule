@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -21,7 +22,6 @@ import com.sdu.evcharging.dto.schedule.ScheduleResult;
 public class AdminBenchmarkService {
 
     private static final double STEP_SIZE_KWH = 0.5;
-    private static final double EPS = 1e-9;
     private static final int DEFAULT_SCENARIOS = 300;
     private static final int MAX_SCENARIOS = 2_000;
     private static final long DEFAULT_SEED = 20260413L;
@@ -48,86 +48,74 @@ public class AdminBenchmarkService {
         long seed = seedInput == null ? DEFAULT_SEED : seedInput;
         Random random = new Random(seed);
 
-        List<Double> optimalObj = new ArrayList<>();
-        List<Double> optimalCost = new ArrayList<>();
-        List<Double> optimalCo2 = new ArrayList<>();
-        List<Double> optimalRuntimeMs = new ArrayList<>();
-
-        List<Double> greedyObj = new ArrayList<>();
-        List<Double> greedyCost = new ArrayList<>();
-        List<Double> greedyCo2 = new ArrayList<>();
-        List<Double> greedyRuntimeMs = new ArrayList<>();
-
-        List<Double> mipObj = new ArrayList<>();
-        List<Double> mipCost = new ArrayList<>();
-        List<Double> mipCo2 = new ArrayList<>();
-        List<Double> mipRuntimeMs = new ArrayList<>();
-
-        List<Double> naiveObj = new ArrayList<>();
-        List<Double> naiveCost = new ArrayList<>();
-        List<Double> naiveCo2 = new ArrayList<>();
-        List<Double> naiveRuntimeMs = new ArrayList<>();
+        Map<String, StrategyRunContext> contexts = new LinkedHashMap<>();
+        contexts.put("optimal", newRunContext(optimalStrategy));
+        contexts.put("greedy", newRunContext(greedyStrategy));
+        contexts.put("mip", newRunContext(mipStrategy));
+        contexts.put("naive", newRunContext(naiveStrategy));
 
         // 1. Warm-up Phase: Run all 50 times to force JIT and native lib loading
         for (int i = 0; i < 50; i++) {
             Scenario scenario = generateFeasibleScenario(random, i);
-            optimalStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            greedyStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            mipStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            naiveStrategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            for (StrategyRunContext context : contexts.values()) {
+                context.strategy().solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+            }
         }
 
         // 2. Measurement Phase
         for (int i = 0; i < scenarios; i++) {
             Scenario scenario = generateFeasibleScenario(random, i);
 
-            long optimalStart = System.nanoTime();
-            ScheduleResult optimalResult = optimalStrategy.solve(
-                    scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            double optimalMs = nanosToMs(System.nanoTime() - optimalStart);
-
-            long greedyStart = System.nanoTime();
-            ScheduleResult greedyResult = greedyStrategy.solve(
-                    scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            double greedyMs = nanosToMs(System.nanoTime() - greedyStart);
-
-            long mipStart = System.nanoTime();
-            ScheduleResult mipResult = mipStrategy.solve(
-                    scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            double mipMs = nanosToMs(System.nanoTime() - mipStart);
-
-            long naiveStart = System.nanoTime();
-            ScheduleResult naiveResult = naiveStrategy.solve(
-                    scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            double naiveMs = nanosToMs(System.nanoTime() - naiveStart);
-
-            double optimalObjective = objectiveValue(optimalResult.slots(), scenario.priceData(), scenario.co2Data(), scenario.constraints().weightPrice(), scenario.constraints().weightCO2(), scenario.constraints().plugInTime(), scenario.constraints().departureTime());
-            double greedyObjective = objectiveValue(greedyResult.slots(), scenario.priceData(), scenario.co2Data(), scenario.constraints().weightPrice(), scenario.constraints().weightCO2(), scenario.constraints().plugInTime(), scenario.constraints().departureTime());
-            double mipObjective = objectiveValue(mipResult.slots(), scenario.priceData(), scenario.co2Data(), scenario.constraints().weightPrice(), scenario.constraints().weightCO2(), scenario.constraints().plugInTime(), scenario.constraints().departureTime());
-            double naiveObjective = objectiveValue(naiveResult.slots(), scenario.priceData(), scenario.co2Data(), scenario.constraints().weightPrice(), scenario.constraints().weightCO2(), scenario.constraints().plugInTime(), scenario.constraints().departureTime());
-
-            DynamicProgrammingChargingStrategy.RealWorldCostBreakdown optimalRealCost = DynamicProgrammingChargingStrategy.calculateRealWorldCost(optimalResult.slots(), scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            DynamicProgrammingChargingStrategy.RealWorldCostBreakdown greedyRealCost = DynamicProgrammingChargingStrategy.calculateRealWorldCost(greedyResult.slots(), scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            DynamicProgrammingChargingStrategy.RealWorldCostBreakdown mipRealCost = DynamicProgrammingChargingStrategy.calculateRealWorldCost(mipResult.slots(), scenario.constraints(), scenario.priceData(), scenario.co2Data());
-            DynamicProgrammingChargingStrategy.RealWorldCostBreakdown naiveRealCost = DynamicProgrammingChargingStrategy.calculateRealWorldCost(naiveResult.slots(), scenario.constraints(), scenario.priceData(), scenario.co2Data());
-
-            optimalObj.add(optimalObjective); optimalCost.add(optimalRealCost.totalRealWorldCost()); optimalCo2.add(optimalResult.totalPredictedEmissions());
-            greedyObj.add(greedyObjective); greedyCost.add(greedyRealCost.totalRealWorldCost()); greedyCo2.add(greedyResult.totalPredictedEmissions());
-            mipObj.add(mipObjective); mipCost.add(mipRealCost.totalRealWorldCost()); mipCo2.add(mipResult.totalPredictedEmissions());
-            naiveObj.add(naiveObjective); naiveCost.add(naiveRealCost.totalRealWorldCost()); naiveCo2.add(naiveResult.totalPredictedEmissions());
-
-            optimalRuntimeMs.add(optimalMs);
-            greedyRuntimeMs.add(greedyMs);
-            mipRuntimeMs.add(mipMs);
-            naiveRuntimeMs.add(naiveMs);
+            for (StrategyRunContext context : contexts.values()) {
+                TimedExecution execution = runTimed(context.strategy(), scenario);
+                appendMeasurements(context, execution, scenario);
+            }
         }
 
-        AdminBenchmarkResponse.StrategyMetrics optimalMetrics = buildMetrics(optimalObj, optimalCost, optimalCo2, optimalRuntimeMs);
-        AdminBenchmarkResponse.StrategyMetrics greedyMetrics = buildMetrics(greedyObj, greedyCost, greedyCo2, greedyRuntimeMs);
-        AdminBenchmarkResponse.StrategyMetrics mipMetrics = buildMetrics(mipObj, mipCost, mipCo2, mipRuntimeMs);
-        AdminBenchmarkResponse.StrategyMetrics naiveMetrics = buildMetrics(naiveObj, naiveCost, naiveCo2, naiveRuntimeMs);
+        AdminBenchmarkResponse.StrategyMetrics optimalMetrics = toResponseMetrics(contexts.get("optimal"));
+        AdminBenchmarkResponse.StrategyMetrics greedyMetrics = toResponseMetrics(contexts.get("greedy"));
+        AdminBenchmarkResponse.StrategyMetrics mipMetrics = toResponseMetrics(contexts.get("mip"));
+        AdminBenchmarkResponse.StrategyMetrics naiveMetrics = toResponseMetrics(contexts.get("naive"));
 
         return new AdminBenchmarkResponse(scenarios, seed, optimalMetrics, greedyMetrics, mipMetrics, naiveMetrics);
+    }
+
+    private static StrategyRunContext newRunContext(ChargingStrategy strategy) {
+        return new StrategyRunContext(strategy, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    }
+
+    private static TimedExecution runTimed(ChargingStrategy strategy, Scenario scenario) {
+        long start = System.nanoTime();
+        ScheduleResult result = strategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
+        return new TimedExecution(result, nanosToMs(System.nanoTime() - start));
+    }
+
+    private static void appendMeasurements(StrategyRunContext context, TimedExecution execution, Scenario scenario) {
+        ScheduleResult result = execution.result();
+        double objective = objectiveValue(
+                result.slots(),
+                scenario.priceData(),
+                scenario.co2Data(),
+                scenario.constraints().weightPrice(),
+                scenario.constraints().weightCO2(),
+                scenario.constraints().plugInTime(),
+                scenario.constraints().departureTime());
+
+        DynamicProgrammingChargingStrategy.RealWorldCostBreakdown realCost =
+                DynamicProgrammingChargingStrategy.calculateRealWorldCost(
+                        result.slots(),
+                        scenario.constraints(),
+                        scenario.priceData(),
+                        scenario.co2Data());
+
+        context.objectives().add(objective);
+        context.costs().add(realCost.totalRealWorldCost());
+        context.emissions().add(result.totalPredictedEmissions());
+        context.runtimeMs().add(execution.runtimeMs());
+    }
+
+    private static AdminBenchmarkResponse.StrategyMetrics toResponseMetrics(StrategyRunContext context) {
+        return buildMetrics(context.objectives(), context.costs(), context.emissions(), context.runtimeMs());
     }
 
     private static AdminBenchmarkResponse.StrategyMetrics buildMetrics(List<Double> obj, List<Double> cost, List<Double> co2, List<Double> rt) {
@@ -267,17 +255,20 @@ public class AdminBenchmarkService {
         return objective;
     }
 
-    private static double percentGap(double baselineValue, double targetValue) {
-        double denom = Math.max(Math.abs(baselineValue), EPS);
-        return ((baselineValue - targetValue) / denom) * 100.0;
-    }
-
     private static double nanosToMs(long nanos) {
         return nanos / 1_000_000.0;
     }
 
-    private static double mean(List<Double> values) {
-        return values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    private record StrategyRunContext(
+            ChargingStrategy strategy,
+            List<Double> objectives,
+            List<Double> costs,
+            List<Double> emissions,
+            List<Double> runtimeMs
+    ) {
+    }
+
+    private record TimedExecution(ScheduleResult result, double runtimeMs) {
     }
 
     private record Scenario(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {

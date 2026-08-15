@@ -10,6 +10,23 @@ import { ApiError } from '@/services/apiClient'
 import { runAdminBenchmark, runAdminDataSync } from '@/services/adminToolsService'
 import { type AdminBenchmarkResponse, type PriceZone } from '@/types/api'
 
+type BenchmarkStrategyKey = keyof Pick<AdminBenchmarkResponse, 'optimal' | 'greedy' | 'mip' | 'naive'>
+
+const strategyLabel: Record<BenchmarkStrategyKey, string> = {
+  optimal: 'DP (Optimal)',
+  greedy: 'Greedy',
+  mip: 'MIP',
+  naive: 'Naive',
+}
+
+const strategyOptions: BenchmarkStrategyKey[] = ['optimal', 'greedy', 'mip', 'naive']
+
+const gapMetrics: Array<{ key: 'objective' | 'cost' | 'emissions'; label: string }> = [
+  { key: 'objective', label: 'Objective gap mean' },
+  { key: 'cost', label: 'Cost gap mean' },
+  { key: 'emissions', label: 'CO2 gap mean' },
+]
+
 function AdminPage() {
   const { user, logout } = useAuth()
   const [scenarios, setScenarios] = useState('300')
@@ -18,12 +35,12 @@ function AdminPage() {
   const [zone, setZone] = useState<PriceZone>('DK1')
 
   const [benchmarkResult, setBenchmarkResult] = useState<AdminBenchmarkResponse | null>(null)
-  const [baselineStrategy, setBaselineStrategy] = useState<'naive' | 'greedy'>('naive')
-  const [targetStrategy, setTargetStrategy] = useState<'optimal' | 'mip'>('optimal')
+  const [baselineStrategy, setBaselineStrategy] = useState<BenchmarkStrategyKey>('naive')
+  const [targetStrategy, setTargetStrategy] = useState<BenchmarkStrategyKey>('optimal')
 
   // Gap formula helper (Baseline - Target) / |Baseline| * 100
   const computeGap = (baselineValue: number, targetValue: number) => {
-    const denom = Math.max(Math.abs(baselineValue), 1e-9);
+    const denom = Math.max(Math.abs(baselineValue), 1e-9)
     return ((baselineValue - targetValue) / denom) * 100.0;
   }
   const [syncResult, setSyncResult] = useState<string | null>(null)
@@ -31,6 +48,15 @@ function AdminPage() {
   const [syncError, setSyncError] = useState<string | null>(null)
   const [benchmarkLoading, setBenchmarkLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
+
+  const setStrategyFromValue = (
+    value: string,
+    setter: (strategy: BenchmarkStrategyKey) => void,
+  ) => {
+    if (value in strategyLabel) {
+      setter(value as BenchmarkStrategyKey)
+    }
+  }
 
   const handleRunBenchmark = async () => {
     setBenchmarkLoading(true)
@@ -133,20 +159,30 @@ function AdminPage() {
                 <div className="flex gap-4">
                   <div className="flex flex-col">
                     <label className="text-xs font-semibold">Baseline:</label>
-                    <select className="border border-border bg-background p-1 text-xs" value={baselineStrategy} onChange={e => setBaselineStrategy(e.target.value as any)}>
-                      <option value="naive">Naive</option>
-                      <option value="greedy">Greedy</option>
-                      <option value="mip">MIP</option>
-                      <option value="optimal">DP (Optimal)</option>
+                    <select
+                      className="border border-border bg-background p-1 text-xs"
+                      value={baselineStrategy}
+                      onChange={(event) => setStrategyFromValue(event.target.value, setBaselineStrategy)}
+                    >
+                      {strategyOptions.map((strategy) => (
+                        <option key={`baseline-${strategy}`} value={strategy}>
+                          {strategyLabel[strategy]}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="flex flex-col">
                     <label className="text-xs font-semibold">Target:</label>
-                    <select className="border border-border bg-background p-1 text-xs" value={targetStrategy} onChange={e => setTargetStrategy(e.target.value as any)}>
-                      <option value="optimal">DP (Optimal)</option>
-                      <option value="mip">MIP</option>
-                      <option value="greedy">Greedy</option>
-                      <option value="naive">Naive</option>
+                    <select
+                      className="border border-border bg-background p-1 text-xs"
+                      value={targetStrategy}
+                      onChange={(event) => setStrategyFromValue(event.target.value, setTargetStrategy)}
+                    >
+                      {strategyOptions.map((strategy) => (
+                        <option key={`target-${strategy}`} value={strategy}>
+                          {strategyLabel[strategy]}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -155,38 +191,27 @@ function AdminPage() {
                   <p className="font-semibold text-xs border-b border-border/60 pb-1 mb-2">
                     Comparative Gap ({baselineStrategy.toUpperCase()} vs {targetStrategy.toUpperCase()})
                   </p>
-                  <p>Objective gap mean: {computeGap(benchmarkResult[baselineStrategy].objective.mean, benchmarkResult[targetStrategy].objective.mean).toFixed(4)}%</p>
-                  <p>Cost gap mean: {computeGap(benchmarkResult[baselineStrategy].cost.mean, benchmarkResult[targetStrategy].cost.mean).toFixed(4)}%</p>
-                  <p>CO2 gap mean: {computeGap(benchmarkResult[baselineStrategy].emissions.mean, benchmarkResult[targetStrategy].emissions.mean).toFixed(4)}%</p>
+                  {gapMetrics.map((metric) => (
+                    <p key={metric.key}>
+                      {metric.label}: {computeGap(
+                        benchmarkResult[baselineStrategy][metric.key].mean,
+                        benchmarkResult[targetStrategy][metric.key].mean,
+                      ).toFixed(4)}%
+                    </p>
+                  ))}
                 </div>
 
                 <div className="mt-2 text-xs border-t pt-2 border-border/60">
                   <p className="font-semibold mb-1">Latency Distribution (ms)</p>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <p className="font-medium">DP (Optimal)</p>
-                      <p>Mean: {benchmarkResult.optimal.runtimeMs.mean.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.optimal.runtimeMs.p50.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.optimal.runtimeMs.p95.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Greedy</p>
-                      <p>Mean: {benchmarkResult.greedy.runtimeMs.mean.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.greedy.runtimeMs.p50.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.greedy.runtimeMs.p95.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">MIP</p>
-                      <p>Mean: {benchmarkResult.mip.runtimeMs.mean.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.mip.runtimeMs.p50.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.mip.runtimeMs.p95.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Naive</p>
-                      <p>Mean: {benchmarkResult.naive.runtimeMs.mean.toFixed(2)}</p>
-                      <p>P50: {benchmarkResult.naive.runtimeMs.p50.toFixed(2)}</p>
-                      <p>P95: {benchmarkResult.naive.runtimeMs.p95.toFixed(2)}</p>
-                    </div>
+                    {strategyOptions.map((strategy) => (
+                      <div key={`runtime-${strategy}`}>
+                        <p className="font-medium">{strategyLabel[strategy]}</p>
+                        <p>Mean: {benchmarkResult[strategy].runtimeMs.mean.toFixed(2)}</p>
+                        <p>P50: {benchmarkResult[strategy].runtimeMs.p50.toFixed(2)}</p>
+                        <p>P95: {benchmarkResult[strategy].runtimeMs.p95.toFixed(2)}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

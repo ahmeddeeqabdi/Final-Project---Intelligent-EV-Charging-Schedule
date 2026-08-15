@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -33,8 +32,6 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
     private static final double SLOT_DURATION_HOURS = 1.0;
     private static final double STEP_SIZE_KWH = 0.5;
     private static final double STARTUP_PENALTY = 0.25;
-    private static final double EFFICIENCY_MAX = 0.99;
-    private static final double EFFICIENCY_MIN = 0.85;
     private static final long MAX_DP_STATES = 3_000_000L;
     private static final double INF = Double.POSITIVE_INFINITY;
 
@@ -43,12 +40,12 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
         Objects.requireNonNull(constraints, "constraints must not be null");
 
         if (priceData == null || priceData.isEmpty()) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         double energyRequiredKwh = constraints.energyRequiredKwh();
         if (energyRequiredKwh <= ENERGY_TOLERANCE) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         int totalSteps = toRoundedSteps(energyRequiredKwh);
@@ -58,11 +55,11 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
             throw new IllegalArgumentException("Max charging power is too low for the configured DP step size.");
         }
 
-        Map<LocalDateTime, Double> co2ByTime = buildCo2Lookup(co2Data);
-        double defaultCo2 = averageCo2OrDefault(co2Data);
+        Map<LocalDateTime, Double> co2ByTime = StrategySupport.buildHourlyCo2Lookup(co2Data);
+        double defaultCo2 = StrategySupport.averageGridValueOrDefault(co2Data, DEFAULT_CO2);
         List<CandidateSlot> candidates = buildCandidates(constraints, priceData, co2ByTime, defaultCo2);
         if (candidates.isEmpty()) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         long maxDeliverableSteps = (long) maxStepsPerSlot * candidates.size();
@@ -72,7 +69,10 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
 
         guardStateSpace(candidates.size(), totalSteps);
 
-        Weight normalizedWeights = normalizeWeights(constraints.weightPrice(), constraints.weightCO2());
+        StrategySupport.Weight normalizedWeights = StrategySupport.normalizeWeights(
+            constraints.weightPrice(),
+            constraints.weightCO2(),
+            DEFAULT_WEIGHT);
         List<WeightedCandidateSlot> weightedCandidates = scoreCandidates(candidates, normalizedWeights);
 
         List<ChargingSlot> slots = solveWithDynamicProgramming(
@@ -90,10 +90,6 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
         double totalCost = calculateTotalCost(slots);
         double totalEmissions = calculateTotalEmissions(slots);
         return new ScheduleResult(slots, totalCost, totalEmissions);
-    }
-
-    private static ScheduleResult emptyResult() {
-        return new ScheduleResult(List.of(), 0.0, 0.0);
     }
 
     private static int toRoundedSteps(double energyRequiredKwh) {
@@ -116,27 +112,6 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
         }
         log.info("[DynamicProgrammingChargingStrategy] Solving DP with {} slots and {} energy steps ({} states)",
                 numSlots, totalSteps, states);
-    }
-
-    private static Map<LocalDateTime, Double> buildCo2Lookup(List<GridData> co2Data) {
-        if (co2Data == null || co2Data.isEmpty()) {
-            return Map.of();
-        }
-
-        return co2Data.stream()
-                .filter(Objects::nonNull)
-                .filter(data -> data.timestamp() != null)
-                .collect(Collectors.groupingBy(
-                        data -> data.timestamp().truncatedTo(ChronoUnit.HOURS),
-                        Collectors.averagingDouble(GridData::value)
-                ));
-    }
-
-    private static double averageCo2OrDefault(List<GridData> co2Data) {
-        if (co2Data == null || co2Data.isEmpty()) {
-            return DEFAULT_CO2;
-        }
-        return co2Data.stream().mapToDouble(GridData::value).average().orElse(DEFAULT_CO2);
     }
 
     private static List<CandidateSlot> buildCandidates(
@@ -165,21 +140,13 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
     }
 
     private static boolean isWithinWindow(LocalDateTime timestamp, UserConstraints constraints) {
-        return !timestamp.isBefore(constraints.plugInTime())
-                && timestamp.isBefore(constraints.departureTime());
+        return StrategySupport.isWithinWindow(timestamp, constraints);
     }
 
-    private static Weight normalizeWeights(double weightPriceInput, double weightCo2Input) {
-        double weightPrice = Math.max(0.0, weightPriceInput);
-        double weightCo2 = Math.max(0.0, weightCo2Input);
-        double weightSum = weightPrice + weightCo2;
-        if (weightSum <= 0.0) {
-            return new Weight(DEFAULT_WEIGHT, DEFAULT_WEIGHT);
-        }
-        return new Weight(weightPrice / weightSum, weightCo2 / weightSum);
-    }
-
-    private static List<WeightedCandidateSlot> scoreCandidates(List<CandidateSlot> candidates, Weight weight) {
+    private static List<WeightedCandidateSlot> scoreCandidates(
+            List<CandidateSlot> candidates,
+            StrategySupport.Weight weight
+    ) {
         List<Double> prices = candidates.stream().map(CandidateSlot::price).toList();
         List<Double> co2Values = candidates.stream().map(CandidateSlot::co2).toList();
         List<Double> normalizedPrices = NormalizationUtility.minMaxNormalize(prices);
@@ -308,7 +275,10 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
             List<GridData> priceData,
             List<GridData> co2Data
     ) {
-        Weight normalizedWeights = normalizeWeights(constraints.weightPrice(), constraints.weightCO2());
+        StrategySupport.Weight normalizedWeights = StrategySupport.normalizeWeights(
+            constraints.weightPrice(),
+            constraints.weightCO2(),
+            DEFAULT_WEIGHT);
         Map<LocalDateTime, Double> scoreByTime = buildScoreByTime(
                 priceData,
                 co2Data,
@@ -374,7 +344,7 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
             List<GridData> co2Data,
             LocalDateTime start,
             LocalDateTime end,
-            Weight weight
+            StrategySupport.Weight weight
     ) {
         List<GridData> inWindowPrice = priceData.stream()
                 .filter(d -> !d.timestamp().isBefore(start) && d.timestamp().isBefore(end))
@@ -451,9 +421,6 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
     }
 
     private record WeightedCandidateSlot(CandidateSlot slot, double weightedScore) {
-    }
-
-    private record Weight(double priceWeight, double co2Weight) {
     }
 
     public record RealWorldCostBreakdown(

@@ -40,24 +40,21 @@ public class MipChargingStrategy implements ChargingStrategy {
         Objects.requireNonNull(constraints, "constraints must not be null");
 
         if (priceData == null || priceData.isEmpty()) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         double energyRequiredKwh = constraints.energyRequiredKwh();
         if (energyRequiredKwh <= ENERGY_TOLERANCE) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
-        LocalDateTime start = constraints.plugInTime();
-        LocalDateTime end = constraints.departureTime();
-
         List<GridData> inWindowPrice = priceData.stream()
-                .filter(d -> !d.timestamp().isBefore(start) && d.timestamp().isBefore(end))
+                .filter(d -> StrategySupport.isWithinWindow(d.timestamp(), constraints))
                 .sorted(Comparator.comparing(GridData::timestamp))
                 .toList();
 
         if (inWindowPrice.isEmpty()) {
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
 
         Map<LocalDateTime, Double> co2ByHour = new HashMap<>();
@@ -75,15 +72,16 @@ public class MipChargingStrategy implements ChargingStrategy {
         List<Double> normalizedPrices = NormalizationUtility.minMaxNormalize(prices);
         List<Double> normalizedCo2 = NormalizationUtility.minMaxNormalize(co2Values);
 
-        double sumWeights = constraints.weightPrice() + constraints.weightCO2();
-        double wPrice = sumWeights > 0 ? constraints.weightPrice() / sumWeights : 0.5;
-        double wCo2 = sumWeights > 0 ? constraints.weightCO2() / sumWeights : 0.5;
+        StrategySupport.Weight normalizedWeight = StrategySupport.normalizeWeights(
+                constraints.weightPrice(),
+                constraints.weightCO2(),
+                0.5);
 
         // Create the linear solver with the SCIP backend.
         MPSolver solver = MPSolver.createSolver("SCIP");
         if (solver == null) {
             log.error("Could not create SCIP solver");
-            return emptyResult();
+            return StrategySupport.emptyResult();
         }
         
         int n = inWindowPrice.size();
@@ -141,7 +139,8 @@ public class MipChargingStrategy implements ChargingStrategy {
         // We will do the same: objective_i = score_i * x_i + STARTUP_PENALTY * z_i
         MPObjective objective = solver.objective();
         for (int i = 0; i < n; ++i) {
-            double score = wPrice * normalizedPrices.get(i) + wCo2 * normalizedCo2.get(i);
+            double score = normalizedWeight.priceWeight() * normalizedPrices.get(i)
+                    + normalizedWeight.co2Weight() * normalizedCo2.get(i);
             objective.setCoefficient(x[i], score);
             objective.setCoefficient(z[i], STARTUP_PENALTY);
         }
@@ -170,7 +169,4 @@ public class MipChargingStrategy implements ChargingStrategy {
         }
     }
 
-    private static ScheduleResult emptyResult() {
-        return new ScheduleResult(List.of(), 0.0, 0.0);
-    }
 }

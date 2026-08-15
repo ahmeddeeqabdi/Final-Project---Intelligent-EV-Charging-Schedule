@@ -138,33 +138,33 @@ public class SchedulingService {
         return normalized;
     }
 
-        private void persistSchedule(Long userId, String algorithm, ScheduleResult result) {
+    private void persistSchedule(Long userId, String algorithm, ScheduleResult result) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
 
         ScheduleResultEntity scheduleEntity = ScheduleResultEntity.builder()
-            .user(user)
-            .algorithm(algorithm)
-            .totalPredictedCost(result.totalPredictedCost())
-            .totalPredictedEmissions(result.totalPredictedEmissions())
-            .degradedEnabled(result.degradedMode().enabled())
-            .degradedReason(result.degradedMode().reason())
-            .degradedSource(result.degradedMode().source())
-            .degradedDataAgeHours(result.degradedMode().dataAgeHours())
-            .build();
+                .user(user)
+                .algorithm(algorithm)
+                .totalPredictedCost(result.totalPredictedCost())
+                .totalPredictedEmissions(result.totalPredictedEmissions())
+                .degradedEnabled(result.degradedMode().enabled())
+                .degradedReason(result.degradedMode().reason())
+                .degradedSource(result.degradedMode().source())
+                .degradedDataAgeHours(result.degradedMode().dataAgeHours())
+                .build();
 
         List<ScheduleSlotEntity> slotEntities = result.slots().stream()
-            .map(slot -> ScheduleSlotEntity.builder()
-                .timestamp(slot.timestamp())
-                .powerDraw(slot.powerDraw())
-                .currentPrice(slot.currentPrice())
-                .currentCO2(slot.currentCO2())
-                .build())
-            .toList();
+                .map(slot -> ScheduleSlotEntity.builder()
+                        .timestamp(slot.timestamp())
+                        .powerDraw(slot.powerDraw())
+                        .currentPrice(slot.currentPrice())
+                        .currentCO2(slot.currentCO2())
+                        .build())
+                .toList();
 
         scheduleEntity.setSlots(slotEntities);
         scheduleResultRepository.save(scheduleEntity);
-        }
+    }
 
     private PriceSelection loadPriceData(ScheduleRequest request) {
         List<EnergyPrice> live = energyPriceRepository.findByPriceAreaAndHourUtcBetweenOrderByHourUtcAsc(
@@ -253,26 +253,26 @@ public class SchedulingService {
                         );
                     }
 
-                            Map<LocalDateTime, Double> sourceHourly = toHourlyAveragesByHour(sourceDay);
-                            if (sourceHourly.isEmpty()) {
-                            return new Co2Selection(
+                    Map<LocalDateTime, Double> sourceHourly = toHourlyAveragesByHour(sourceDay);
+                    if (sourceHourly.isEmpty()) {
+                        return new Co2Selection(
                                 List.of(),
                                 ScheduleResult.DegradedMode.degraded(CO2_MISSING_REASON, "co2-unavailable", 0)
-                            );
-                            }
+                        );
+                    }
 
-                            List<CO2Intensity> completed = completeCo2Window(
-                                request,
-                                refreshedHourly,
-                                sourceHourly,
-                                requestedSlots
-                            );
+                    List<CO2Intensity> completed = completeCo2Window(
+                            request,
+                            refreshedHourly,
+                            sourceHourly,
+                            requestedSlots
+                    );
 
                     long dataAgeHours = Math.max(0L, Duration.between(latest.getTimestampUtc(), request.plugInTime()).toHours());
                     log.warn("Serving cached historical CO2 in fallback mode [zone={}] sourceDay={}",
                             request.priceZone(), sourceDayStart.toLocalDate());
                     return new Co2Selection(
-                                completed,
+                            completed,
                             ScheduleResult.DegradedMode.degraded(CO2_DEGRADE_REASON, "cached-historical-co2", dataAgeHours)
                     );
                 })
@@ -495,14 +495,14 @@ public class SchedulingService {
     private record PriceSelection(
             List<EnergyPrice> prices,
             ScheduleResult.DegradedMode degradedMode
-            ) {
+    ) {
 
     }
 
-        private record Co2Selection(
+    private record Co2Selection(
             List<CO2Intensity> values,
             ScheduleResult.DegradedMode degradedMode
-        ) {
+    ) {
 
-        }
+    }
 }
