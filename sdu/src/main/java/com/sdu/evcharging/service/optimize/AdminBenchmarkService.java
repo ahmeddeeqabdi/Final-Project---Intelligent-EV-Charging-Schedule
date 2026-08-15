@@ -3,8 +3,8 @@ package com.sdu.evcharging.service.optimize;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -48,11 +48,10 @@ public class AdminBenchmarkService {
         long seed = seedInput == null ? DEFAULT_SEED : seedInput;
         Random random = new Random(seed);
 
-        Map<String, StrategyRunContext> contexts = new LinkedHashMap<>();
-        contexts.put("optimal", newRunContext(optimalStrategy));
-        contexts.put("greedy", newRunContext(greedyStrategy));
-        contexts.put("mip", newRunContext(mipStrategy));
-        contexts.put("naive", newRunContext(naiveStrategy));
+        Map<StrategyId, StrategyRunContext> contexts = new EnumMap<>(StrategyId.class);
+        for (StrategyId strategyId : StrategyId.values()) {
+            contexts.put(strategyId, newRunContext(strategyFor(strategyId)));
+        }
 
         // 1. Warm-up Phase: Run all 50 times to force JIT and native lib loading
         for (int i = 0; i < 50; i++) {
@@ -72,12 +71,21 @@ public class AdminBenchmarkService {
             }
         }
 
-        AdminBenchmarkResponse.StrategyMetrics optimalMetrics = toResponseMetrics(contexts.get("optimal"));
-        AdminBenchmarkResponse.StrategyMetrics greedyMetrics = toResponseMetrics(contexts.get("greedy"));
-        AdminBenchmarkResponse.StrategyMetrics mipMetrics = toResponseMetrics(contexts.get("mip"));
-        AdminBenchmarkResponse.StrategyMetrics naiveMetrics = toResponseMetrics(contexts.get("naive"));
+        AdminBenchmarkResponse.StrategyMetrics optimalMetrics = toResponseMetrics(contexts.get(StrategyId.OPTIMAL));
+        AdminBenchmarkResponse.StrategyMetrics greedyMetrics = toResponseMetrics(contexts.get(StrategyId.GREEDY));
+        AdminBenchmarkResponse.StrategyMetrics mipMetrics = toResponseMetrics(contexts.get(StrategyId.MIP));
+        AdminBenchmarkResponse.StrategyMetrics naiveMetrics = toResponseMetrics(contexts.get(StrategyId.NAIVE));
 
         return new AdminBenchmarkResponse(scenarios, seed, optimalMetrics, greedyMetrics, mipMetrics, naiveMetrics);
+    }
+
+    private ChargingStrategy strategyFor(StrategyId strategyId) {
+        return switch (strategyId) {
+            case OPTIMAL -> optimalStrategy;
+            case GREEDY -> greedyStrategy;
+            case MIP -> mipStrategy;
+            case NAIVE -> naiveStrategy;
+        };
     }
 
     private static StrategyRunContext newRunContext(ChargingStrategy strategy) {
@@ -269,6 +277,13 @@ public class AdminBenchmarkService {
     }
 
     private record TimedExecution(ScheduleResult result, double runtimeMs) {
+    }
+
+    private enum StrategyId {
+        OPTIMAL,
+        GREEDY,
+        MIP,
+        NAIVE
     }
 
     private record Scenario(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {

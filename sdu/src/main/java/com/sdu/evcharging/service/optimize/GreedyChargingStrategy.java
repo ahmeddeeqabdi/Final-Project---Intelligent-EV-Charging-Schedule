@@ -57,9 +57,9 @@ public class GreedyChargingStrategy implements ChargingStrategy {
         }
 
         StrategySupport.Weight normalizedWeights = StrategySupport.normalizeWeights(
-            constraints.weightPrice(),
-            constraints.weightCO2(),
-            DEFAULT_WEIGHT);
+                constraints.weightPrice(),
+                constraints.weightCO2(),
+                DEFAULT_WEIGHT);
         List<ScoredCandidateSlot> scoredCandidates = scoreAndSortCandidates(candidates, normalizedWeights);
         List<ChargingSlot> slots = allocateSlots(scoredCandidates, maxStepsPerSlot, totalSteps);
 
@@ -93,7 +93,7 @@ public class GreedyChargingStrategy implements ChargingStrategy {
                 continue;
             }
 
-            LocalDateTime hourBucket = timestamp.withMinute(0).withSecond(0).withNano(0);
+            LocalDateTime hourBucket = StrategySupport.toHourBucket(timestamp);
             double co2 = co2ByTime.getOrDefault(hourBucket, defaultCo2);
             candidates.add(new CandidateSlot(timestamp, pricePoint.value(), co2));
         }

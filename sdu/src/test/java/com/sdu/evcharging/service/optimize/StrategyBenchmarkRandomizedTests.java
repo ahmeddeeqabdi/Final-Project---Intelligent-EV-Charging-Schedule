@@ -74,34 +74,34 @@ class StrategyBenchmarkRandomizedTests {
                     scenario.constraints().plugInTime(),
                     scenario.constraints().departureTime());
 
-                DynamicProgrammingChargingStrategy.RealWorldCostBreakdown optimalBreakdown =
+            DynamicProgrammingChargingStrategy.RealWorldCostBreakdown optimalBreakdown =
                     DynamicProgrammingChargingStrategy.calculateRealWorldCost(
-                        optimalResult.slots(),
-                        scenario.constraints(),
-                        scenario.priceData(),
-                        scenario.co2Data());
-                DynamicProgrammingChargingStrategy.RealWorldCostBreakdown greedyBreakdown =
+                            optimalResult.slots(),
+                            scenario.constraints(),
+                            scenario.priceData(),
+                            scenario.co2Data());
+            DynamicProgrammingChargingStrategy.RealWorldCostBreakdown greedyBreakdown =
                     DynamicProgrammingChargingStrategy.calculateRealWorldCost(
-                        greedyResult.slots(),
-                        scenario.constraints(),
-                        scenario.priceData(),
-                        scenario.co2Data());
+                            greedyResult.slots(),
+                            scenario.constraints(),
+                            scenario.priceData(),
+                            scenario.co2Data());
 
-                // DP must be no worse than greedy under the real-world cost model.
-                assertTrue(optimalBreakdown.totalRealWorldCost() <= greedyBreakdown.totalRealWorldCost() + 1e-7,
+            // DP must be no worse than greedy under the real-world cost model.
+            assertTrue(optimalBreakdown.totalRealWorldCost() <= greedyBreakdown.totalRealWorldCost() + 1e-7,
                     "Scenario " + i + ": optimal real-world cost > greedy real-world cost");
 
             objectiveGapPercents.add(percentGap(greedyObjective, optimalObjective));
-                costGapPercents.add(percentGap(greedyBreakdown.totalRealWorldCost(), optimalBreakdown.totalRealWorldCost()));
+            costGapPercents.add(percentGap(greedyBreakdown.totalRealWorldCost(), optimalBreakdown.totalRealWorldCost()));
             emissionsGapPercents.add(percentGap(greedyResult.totalPredictedEmissions(), optimalResult.totalPredictedEmissions()));
-                optimalElectricityOnlyCosts.add(optimalBreakdown.electricityOnlyCost());
-                greedyElectricityOnlyCosts.add(greedyBreakdown.electricityOnlyCost());
-                optimalSwitchingEvents.add((double) optimalBreakdown.switchingEvents());
-                greedySwitchingEvents.add((double) greedyBreakdown.switchingEvents());
-                optimalEfficiencyLossCosts.add(optimalBreakdown.efficiencyLossCost());
-                greedyEfficiencyLossCosts.add(greedyBreakdown.efficiencyLossCost());
-                optimalRealWorldCosts.add(optimalBreakdown.totalRealWorldCost());
-                greedyRealWorldCosts.add(greedyBreakdown.totalRealWorldCost());
+            optimalElectricityOnlyCosts.add(optimalBreakdown.electricityOnlyCost());
+            greedyElectricityOnlyCosts.add(greedyBreakdown.electricityOnlyCost());
+            optimalSwitchingEvents.add((double) optimalBreakdown.switchingEvents());
+            greedySwitchingEvents.add((double) greedyBreakdown.switchingEvents());
+            optimalEfficiencyLossCosts.add(optimalBreakdown.efficiencyLossCost());
+            greedyEfficiencyLossCosts.add(greedyBreakdown.efficiencyLossCost());
+            optimalRealWorldCosts.add(optimalBreakdown.totalRealWorldCost());
+            greedyRealWorldCosts.add(greedyBreakdown.totalRealWorldCost());
         }
 
         BenchmarkSummary objectiveSummary = BenchmarkSummary.of(objectiveGapPercents);

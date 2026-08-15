@@ -15,15 +15,6 @@ import com.sdu.evcharging.domain.strategy.UserConstraints;
 import com.sdu.evcharging.dto.schedule.ChargingSlot;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
-
-
-
-
-
-
-
-
-
 @Component("naive")
 public class NaiveChargingStrategy implements ChargingStrategy {
 
@@ -41,7 +32,6 @@ public class NaiveChargingStrategy implements ChargingStrategy {
         }
 
         double energyNeededKwh = constraints.energyRequiredKwh();
-
         if (energyNeededKwh <= ENERGY_TOLERANCE) {
             return StrategySupport.emptyResult();
         }
@@ -56,7 +46,7 @@ public class NaiveChargingStrategy implements ChargingStrategy {
                 break;
             }
 
-            if (!isWithinChargingWindow(price.timestamp(), constraints)) {
+            if (!StrategySupport.isWithinWindow(price.timestamp(), constraints)) {
                 continue;
             }
 
@@ -91,11 +81,6 @@ public class NaiveChargingStrategy implements ChargingStrategy {
             co2ByTime.putIfAbsent(data.timestamp(), data.value());
         }
         return co2ByTime;
-    }
-
-    private static boolean isWithinChargingWindow(LocalDateTime timestamp, UserConstraints constraints) {
-        return !timestamp.isBefore(constraints.plugInTime())
-                && timestamp.isBefore(constraints.departureTime());
     }
 
     private static double calculateTotalCost(List<ChargingSlot> slots) {

@@ -25,6 +25,10 @@ final class StrategySupport {
                 && timestamp.isBefore(constraints.departureTime());
     }
 
+    static LocalDateTime toHourBucket(LocalDateTime timestamp) {
+        return timestamp.truncatedTo(ChronoUnit.HOURS);
+    }
+
     static Weight normalizeWeights(double weightPriceInput, double weightCo2Input, double defaultWeight) {
         double weightPrice = Math.max(0.0, weightPriceInput);
         double weightCo2 = Math.max(0.0, weightCo2Input);

@@ -1,7 +1,6 @@
 package com.sdu.evcharging.service.optimize;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -70,9 +69,9 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
         guardStateSpace(candidates.size(), totalSteps);
 
         StrategySupport.Weight normalizedWeights = StrategySupport.normalizeWeights(
-            constraints.weightPrice(),
-            constraints.weightCO2(),
-            DEFAULT_WEIGHT);
+                constraints.weightPrice(),
+                constraints.weightCO2(),
+                DEFAULT_WEIGHT);
         List<WeightedCandidateSlot> weightedCandidates = scoreCandidates(candidates, normalizedWeights);
 
         List<ChargingSlot> slots = solveWithDynamicProgramming(
@@ -131,7 +130,7 @@ public class DynamicProgrammingChargingStrategy implements ChargingStrategy {
                 continue;
             }
 
-            LocalDateTime hourBucket = timestamp.truncatedTo(ChronoUnit.HOURS);
+            LocalDateTime hourBucket = StrategySupport.toHourBucket(timestamp);
             double co2 = co2ByTime.getOrDefault(hourBucket, defaultCo2);
             candidates.add(new CandidateSlot(timestamp, pricePoint.value(), co2));
         }

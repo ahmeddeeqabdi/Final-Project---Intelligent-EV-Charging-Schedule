@@ -27,6 +27,9 @@ const gapMetrics: Array<{ key: 'objective' | 'cost' | 'emissions'; label: string
   { key: 'emissions', label: 'CO2 gap mean' },
 ]
 
+const isBenchmarkStrategyKey = (value: string): value is BenchmarkStrategyKey =>
+  strategyOptions.includes(value as BenchmarkStrategyKey)
+
 function AdminPage() {
   const { user, logout } = useAuth()
   const [scenarios, setScenarios] = useState('300')
@@ -41,7 +44,7 @@ function AdminPage() {
   // Gap formula helper (Baseline - Target) / |Baseline| * 100
   const computeGap = (baselineValue: number, targetValue: number) => {
     const denom = Math.max(Math.abs(baselineValue), 1e-9)
-    return ((baselineValue - targetValue) / denom) * 100.0;
+    return ((baselineValue - targetValue) / denom) * 100.0
   }
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null)
@@ -53,8 +56,8 @@ function AdminPage() {
     value: string,
     setter: (strategy: BenchmarkStrategyKey) => void,
   ) => {
-    if (value in strategyLabel) {
-      setter(value as BenchmarkStrategyKey)
+    if (isBenchmarkStrategyKey(value)) {
+      setter(value)
     }
   }
 
