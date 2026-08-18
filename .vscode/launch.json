@@ -4,7 +4,7 @@
             "type": "java",
             "name": "Spring Boot-EvChargingSchedulerApplication<sdu>",
             "request": "launch",
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/backend",
             "mainClass": "com.sdu.evcharging.EvChargingSchedulerApplication",
             "projectName": "sdu",
             "args": "",

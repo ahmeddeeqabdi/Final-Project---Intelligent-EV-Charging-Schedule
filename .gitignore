@@ -1,9 +1,29 @@
-# Node dependencies
-node_modules/
-
-# Local runtime data and secrets
-sdu/.data/
-sdu/src/main/resources/static/
+# Local environment files
 .env
 .env.*
 !.env.example
+
+# Backend build and runtime data
+backend/.data/
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/src/main/resources/static/
+
+# Frontend dependencies and build output
+node_modules/
+frontend/node/
+frontend/dist/
+frontend/dist-ssr/
+
+# Logs and local tool output
+*.log
+*.local
+
+# IDE and OS metadata
+backend/.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local artifacts left by the previous repository layout
+/sdu/
