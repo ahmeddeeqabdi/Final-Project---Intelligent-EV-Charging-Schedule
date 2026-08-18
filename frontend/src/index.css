@@ -73,7 +73,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 70;
-  pointer-events: none;
+  pointer-events: auto;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -100,6 +100,15 @@ body {
   width: min(980px, calc(100vw - 1.5rem));
   display: grid;
   gap: 12px;
+}
+
+.intro-overlay__skip {
+  justify-self: center;
+  min-height: 36px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-overlay *, .intro-overlay { animation: none !important; }
 }
 
 .intro-overlay__eyebrow {

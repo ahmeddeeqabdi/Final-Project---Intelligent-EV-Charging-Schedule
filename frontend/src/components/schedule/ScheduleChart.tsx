@@ -321,7 +321,7 @@ export function ScheduleChart({
     return (
       <div className="pt-2 lg:pt-1">
         <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
-        <div className="flex min-h-[260px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0]">
+        <div className="flex min-h-[260px] items-center justify-center border border-border bg-card">
           <div className="inline-flex min-h-11 items-center gap-2 text-base font-semibold tracking-wide text-muted-foreground uppercase">
             <Spinner className="h-5 w-5" />
             Rendering optimized schedule...
@@ -335,7 +335,7 @@ export function ScheduleChart({
     return (
       <div className="pt-2 lg:pt-1">
         <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
-        <div className="flex min-h-[260px] items-center justify-center border border-[#E0DDD5] bg-[#F7F5F0] p-6 text-center text-base font-semibold tracking-wide text-muted-foreground uppercase">
+        <div className="flex min-h-[260px] items-center justify-center border border-border bg-card p-6 text-center text-base font-semibold tracking-wide text-muted-foreground uppercase">
           Submit constraints to visualize charging power, spot prices, and CO2 intensity over time.
         </div>
       </div>
@@ -415,7 +415,7 @@ export function ScheduleChart({
                   }
 
                   return (
-                    <div className="min-w-[220px] bg-[#F7F5F0] border border-[#E0DDD5] p-3 shadow-hard-sm text-base">
+                    <div className="min-w-[220px] bg-card border border-border p-3 shadow-hard-sm text-base">
                       <p className="text-base font-semibold uppercase tracking-wider text-muted-foreground mb-3">{point.intervalLabel}</p>
                       <div className="space-y-1.5 tabular-nums">
                         <p className="flex justify-between">

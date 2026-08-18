@@ -8,5 +8,5 @@ import com.sdu.evcharging.domain.ScheduleResultEntity;
 
 public interface ScheduleResultRepository extends JpaRepository<ScheduleResultEntity, Long> {
 
-    List<ScheduleResultEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<ScheduleResultEntity> findTop20ByUserIdOrderByCreatedAtDesc(Long userId);
 }

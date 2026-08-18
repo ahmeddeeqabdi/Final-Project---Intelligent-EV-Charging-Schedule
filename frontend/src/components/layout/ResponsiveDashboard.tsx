@@ -37,11 +37,11 @@ export function ResponsiveDashboard({ constraints, content }: ResponsiveDashboar
           <div className="sticky top-6">{constraints}</div>
         ) : (
           <Accordion type="single" collapsible defaultValue="constraints">
-            <AccordionItem value="constraints" className="border border-[#E0DDD5] bg-[#F7F5F0] px-4 shadow-hard-sm">
+            <AccordionItem value="constraints" className="border border-border bg-card px-4 shadow-hard-sm">
               <AccordionTrigger className="min-h-11 py-3 text-sm font-semibold tracking-wide uppercase text-foreground">
                 <span className="inline-flex items-center gap-2">
                   <MixerHorizontalIcon className="h-4 w-4" />
-                  Charging Constraints
+                  Charging preferences
                 </span>
               </AccordionTrigger>
               <AccordionContent className="pb-4">{constraints}</AccordionContent>
@@ -49,7 +49,7 @@ export function ResponsiveDashboard({ constraints, content }: ResponsiveDashboar
           </Accordion>
         )}
       </section>
-      <section className="lg:col-span-1 border-l-0 lg:border-l lg:border-[#E0DDD5] lg:pl-8">{content}</section>
+      <section className="lg:col-span-1 border-l-0 lg:border-l lg:border-border lg:pl-8">{content}</section>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Database, FlaskConical, LogOut } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,11 @@ const gapMetrics: Array<{ key: 'objective' | 'cost' | 'emissions'; label: string
 
 const isBenchmarkStrategyKey = (value: string): value is BenchmarkStrategyKey =>
   strategyOptions.includes(value as BenchmarkStrategyKey)
+
+function BenchmarkChart({ result, metric, title }: { result: AdminBenchmarkResponse; metric: 'cost' | 'emissions' | 'runtimeMs'; title: string }) {
+  const data = strategyOptions.map((strategy) => ({ name: strategyLabel[strategy], value: result[strategy][metric].mean }))
+  return <div className="h-52 border border-border bg-background p-2"><p className="mb-2 text-xs font-bold">{title}</p><ResponsiveContainer width="100%" height="85%"><BarChart data={data} margin={{ left: 4, right: 4 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" tick={{ fontSize: 9 }} /><YAxis tick={{ fontSize: 9 }} /><Tooltip /><Bar dataKey="value" fill="hsl(var(--primary))" /></BarChart></ResponsiveContainer></div>
+}
 
 function AdminPage() {
   const { user, logout } = useAuth()
@@ -216,6 +222,11 @@ function AdminPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+                <div className="grid gap-2 pt-2">
+                  <BenchmarkChart result={benchmarkResult} metric="cost" title="Average cost" />
+                  <BenchmarkChart result={benchmarkResult} metric="emissions" title="Average CO2 emissions" />
+                  <BenchmarkChart result={benchmarkResult} metric="runtimeMs" title="Average runtime (ms)" />
                 </div>
               </div>
             ) : null}

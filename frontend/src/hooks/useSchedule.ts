@@ -1,10 +1,12 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError, apiRequest } from '@/services/apiClient'
 import {
   type BackendErrorResponse,
   type BackendScheduleRequest,
   type BackendScheduleResult,
+  type OptimizationAlgorithm,
   type ScheduleFormValues,
+  type ScheduleRunResult,
   type ScheduleResult,
 } from '@/types/api'
 
@@ -40,7 +42,10 @@ const mapFormToRequest = (values: ScheduleFormValues): BackendScheduleRequest =>
   }
 }
 
-const mapBackendToUi = (payload: BackendScheduleResult): ScheduleResult => {
+export const mapBackendToUi = (
+  payload: BackendScheduleResult,
+  algorithm: OptimizationAlgorithm,
+): ScheduleResult => {
   const degradedMode = payload.degradedMode ?? {
     enabled: false,
     source: 'live',
@@ -48,6 +53,7 @@ const mapBackendToUi = (payload: BackendScheduleResult): ScheduleResult => {
   }
 
   return {
+    algorithm,
     totalCost: payload.totalPredictedCost,
     totalCO2: payload.totalPredictedEmissions,
     isDegradedMode: degradedMode.enabled,
@@ -68,9 +74,13 @@ const mapBackendToUi = (payload: BackendScheduleResult): ScheduleResult => {
   }
 }
 
-const submitSchedule = async (values: ScheduleFormValues): Promise<ScheduleResult> => {
+export const submitSchedule = async (
+  values: ScheduleFormValues,
+  algorithm: OptimizationAlgorithm,
+  persist: boolean,
+): Promise<ScheduleResult> => {
   const requestPayload = mapFormToRequest(values)
-  const search = new URLSearchParams({ algorithm: values.algorithm })
+  const search = new URLSearchParams({ algorithm, persist: String(persist) })
 
   try {
     const payload = await apiRequest<BackendScheduleResult>(`/api/v1/schedule?${search.toString()}`, {
@@ -78,7 +88,7 @@ const submitSchedule = async (values: ScheduleFormValues): Promise<ScheduleResul
       body: JSON.stringify(requestPayload),
     })
 
-    return mapBackendToUi(payload)
+    return mapBackendToUi(payload, algorithm)
   } catch (caught) {
     if (caught instanceof ScheduleApiError) {
       throw caught
@@ -104,7 +114,35 @@ const submitSchedule = async (values: ScheduleFormValues): Promise<ScheduleResul
 }
 
 export const useSchedule = () => {
-  return useMutation<ScheduleResult, ScheduleApiError, ScheduleFormValues>({
-    mutationFn: submitSchedule,
+  const queryClient = useQueryClient()
+
+  return useMutation<ScheduleRunResult, ScheduleApiError, ScheduleFormValues>({
+    mutationFn: async (values) => {
+      const algorithms: OptimizationAlgorithm[] = values.compareStrategies
+        ? ['naive', 'greedy', 'optimal', 'mip']
+        : Array.from(new Set<OptimizationAlgorithm>([values.algorithm, 'naive']))
+
+      const attempts = await Promise.allSettled(
+        algorithms.map((algorithm) =>
+          submitSchedule(values, algorithm, algorithm === values.algorithm),
+        ),
+      )
+      const results = attempts.flatMap((attempt) => attempt.status === 'fulfilled' ? [attempt.value] : [])
+      const comparisons = Object.fromEntries(results.map((result) => [result.algorithm, result]))
+      const selected = comparisons[values.algorithm]
+
+      if (!selected) {
+        const selectedAttempt = attempts[algorithms.indexOf(values.algorithm)]
+        if (selectedAttempt?.status === 'rejected' && selectedAttempt.reason instanceof ScheduleApiError) {
+          throw selectedAttempt.reason
+        }
+        throw new ScheduleApiError('The selected strategy did not return a result.', 500)
+      }
+
+      return { selected, comparisons }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['schedule-history'] })
+    },
   })
 }

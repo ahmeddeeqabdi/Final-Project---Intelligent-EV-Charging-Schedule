@@ -24,6 +24,7 @@ export interface MarketSignalPoint {
 }
 
 export interface ScheduleResult {
+  algorithm: OptimizationAlgorithm
   totalCost: number
   totalCO2: number
   isDegradedMode: boolean
@@ -38,6 +39,22 @@ export interface ScheduleFormValues extends ScheduleRequest {
   currentSoC: number
   priceZone: PriceZone
   algorithm: OptimizationAlgorithm
+  compareStrategies: boolean
+}
+
+export type ScheduleComparison = Partial<Record<OptimizationAlgorithm, ScheduleResult>>
+
+export interface ScheduleRunResult {
+  selected: ScheduleResult
+  comparisons: ScheduleComparison
+}
+
+export interface VehicleProfile {
+  id: string
+  name: string
+  batteryCapacity: number
+  maxPower: number
+  priceZone: PriceZone
 }
 
 export interface BackendScheduleRequest {
@@ -78,6 +95,21 @@ export interface BackendScheduleResult {
   totalPredictedEmissions: number
   degradedMode: BackendDegradedMode
   marketSignals?: BackendMarketSignalPoint[]
+}
+
+export interface BackendScheduleHistoryItem {
+  id: number
+  algorithm: OptimizationAlgorithm
+  totalPredictedCost: number
+  totalPredictedEmissions: number
+  degradedMode: BackendDegradedMode
+  createdAt: string
+  slots: BackendChargingSlot[]
+}
+
+export interface ScheduleHistoryItem extends ScheduleResult {
+  id: number
+  createdAt: string
 }
 
 export interface BackendErrorResponse {

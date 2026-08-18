@@ -3,20 +3,24 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, CarFront, LogOut, Moon, Sun } from 'lucide-react'
 import { ResponsiveDashboard } from '@/components/layout/ResponsiveDashboard'
 import { PlanBreakdown } from '@/components/schedule/PlanBreakdown'
+import { ScheduleActions } from '@/components/schedule/ScheduleActions'
 import { ScheduleChart } from '@/components/schedule/ScheduleChart'
 import { ScheduleForm } from '@/components/schedule/ScheduleForm'
+import { ScheduleHistory } from '@/components/schedule/ScheduleHistory'
 import { ResultsSummary } from '@/components/schedule/ResultsSummary'
 import { StatusBanner } from '@/components/schedule/StatusBanner'
+import { StrategyComparison } from '@/components/schedule/StrategyComparison'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { useSchedule } from '@/hooks/useSchedule'
 import { useUserConstraints } from '@/hooks/useUserConstraints'
 import { cn } from '@/lib/utils'
-import { type ScheduleFormValues } from '@/types/api'
+import { type OptimizationAlgorithm, type ScheduleFormValues } from '@/types/api'
 
 type ThemeMode = 'light' | 'dark'
-const INTRO_DURATION_MS = 2600
+const INTRO_DURATION_MS = 1400
+const INTRO_STORAGE_KEY = 'ev-scheduler-intro-seen'
 
 const getInitialTheme = (): ThemeMode => {
   if (typeof window === 'undefined') {
@@ -37,12 +41,14 @@ function SchedulerPage() {
   const { query: constraintsQuery, updateMutation: updateConstraintsMutation } = useUserConstraints()
 
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
-  const [showIntro, setShowIntro] = useState<boolean>(true)
+  const [showIntro, setShowIntro] = useState<boolean>(() => window.localStorage.getItem(INTRO_STORAGE_KEY) !== 'true')
   const [dismissedBannerKey, setDismissedBannerKey] = useState<string | null>(null)
   const [lastRequestWindow, setLastRequestWindow] = useState<{
     startTime: string
     endTime: string
   } | null>(null)
+  const [lastValues, setLastValues] = useState<ScheduleFormValues | null>(null)
+  const [activeAlgorithm, setActiveAlgorithm] = useState<OptimizationAlgorithm>('greedy')
 
 
   useEffect(() => {
@@ -57,6 +63,7 @@ function SchedulerPage() {
 
     const timer = window.setTimeout(() => {
       setShowIntro(false)
+      window.localStorage.setItem(INTRO_STORAGE_KEY, 'true')
     }, INTRO_DURATION_MS)
 
     return () => window.clearTimeout(timer)
@@ -93,6 +100,8 @@ function SchedulerPage() {
       startTime: new Date().toISOString(),
       endTime: values.departureTime,
     })
+    setLastValues(values)
+    setActiveAlgorithm(values.algorithm)
     scheduleMutation.mutate(values)
   }
 
@@ -105,7 +114,8 @@ function SchedulerPage() {
     })
   }
 
-  const schedule = scheduleMutation.data ?? null
+  const schedule = scheduleMutation.data?.comparisons[activeAlgorithm] ?? scheduleMutation.data?.selected ?? null
+  const baseline = scheduleMutation.data?.comparisons.naive ?? null
   const degradedBannerKey = useMemo(() => {
     if (!schedule?.isDegradedMode) {
       return null
@@ -123,7 +133,7 @@ function SchedulerPage() {
   return (
     <div className={cn('min-h-screen pb-4', showIntro && 'intro-active')}>
       {showIntro ? (
-        <div className="intro-overlay" aria-hidden="true">
+        <div className="intro-overlay" role="dialog" aria-label="Welcome to the EV charging scheduler">
           <div className="intro-overlay__ambient" />
           <div className="intro-overlay__content">
             <p className="intro-overlay__eyebrow">EV Dispatch Initializing</p>
@@ -133,6 +143,7 @@ function SchedulerPage() {
               <div className="intro-road__spark" />
               <CarFront className="intro-road__car" />
             </div>
+            <Button type="button" variant="secondary" className="intro-overlay__skip" onClick={() => { setShowIntro(false); window.localStorage.setItem(INTRO_STORAGE_KEY, 'true') }}>Skip intro</Button>
           </div>
         </div>
       ) : null}
@@ -146,25 +157,20 @@ function SchedulerPage() {
       />
       <div className="mx-auto max-w-screen-2xl px-4 pb-2 pt-2 sm:px-6 lg:px-10">
         <header className="mb-4 border-b-4 border-foreground pb-4 relative mt-3">
-          <div className="absolute top-12 right-2 -rotate-[8deg] z-10 pointer-events-none">
-            <span className="font-handwriting text-3xl text-[#D95C14] opacity-90 select-none">
-              Prototype
-            </span>
-          </div>
           <div className="flex flex-wrap items-start justify-between gap-3 relative">
             <div className="max-w-4xl">
               <div className="flex items-center gap-4">
                 <span className="inline-block border-2 border-foreground px-2 py-0.5 font-sans text-xs font-bold uppercase tracking-widest bg-foreground text-background shadow-hard-sm">
-                  System Active
+                  Ready
                 </span>
                 <p className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   EV Charging Scheduler
                 </p>
               </div>
               <h1 className="mt-3 max-w-none whitespace-nowrap font-display text-3xl font-extrabold uppercase tracking-tighter text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
-                INTELLIGENT EV CHARGING SCHEDULER
+                PLAN YOUR NEXT CHARGE
               </h1>
-              <p className="mt-2 text-xs font-bold tracking-widest uppercase text-muted-foreground">Operator: {user?.email}</p>
+              <p className="mt-2 text-xs font-bold tracking-widest uppercase text-muted-foreground">Signed in as {user?.email}</p>
             </div>
             <div className="flex items-center gap-2 self-start flex-col items-end">
               <div className="flex gap-2">
@@ -180,7 +186,7 @@ function SchedulerPage() {
               </Button>
               <Button type="button" variant="secondary" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Terminate
+                Sign out
               </Button>
               {user?.role === 'ADMIN' ? (
                 <Button asChild type="button" variant="secondary" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold">
@@ -205,7 +211,9 @@ function SchedulerPage() {
           }
           content={
             <div className="space-y-2 sm:space-y-3">
-              <ResultsSummary result={schedule} isLoading={scheduleMutation.isPending} />
+              <ResultsSummary result={schedule} baseline={baseline} currentSoC={lastValues?.currentSoC} targetSoC={lastValues?.targetSoC} batteryCapacity={lastValues?.batteryCapacity} isLoading={scheduleMutation.isPending} />
+              {scheduleMutation.data && lastValues ? <StrategyComparison comparisons={scheduleMutation.data.comparisons} active={activeAlgorithm} costWeight={lastValues.costWeight} onSelect={setActiveAlgorithm} /> : null}
+              <ScheduleActions result={schedule} />
               <ScheduleChart
                 slots={schedule?.slots ?? []}
                 marketSignals={schedule?.marketSignals ?? []}
@@ -214,6 +222,7 @@ function SchedulerPage() {
                 windowEnd={lastRequestWindow?.endTime ?? null}
               />
               <PlanBreakdown result={schedule} isLoading={scheduleMutation.isPending} />
+              <ScheduleHistory />
 
               {scheduleMutation.error ? (
                 <Card className="border-warning/50 bg-warning/20">

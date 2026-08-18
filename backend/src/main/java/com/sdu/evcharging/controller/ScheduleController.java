@@ -2,10 +2,12 @@ package com.sdu.evcharging.controller;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sdu.evcharging.dto.schedule.ScheduleRequest;
+import com.sdu.evcharging.dto.schedule.ScheduleHistoryItem;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 import com.sdu.evcharging.security.AuthUserPrincipal;
+import com.sdu.evcharging.service.history.ScheduleHistoryService;
 import com.sdu.evcharging.service.ingest.GridDataSyncService;
 import com.sdu.evcharging.service.optimize.SchedulingService;
 
@@ -30,13 +34,22 @@ public class ScheduleController {
     private static final Set<String> ALLOWED_ZONES = Set.of("DK1", "DK2");
 
     private final SchedulingService schedulingService;
+    private final ScheduleHistoryService scheduleHistoryService;
     private final GridDataSyncService gridDataSyncService;
+
+    @GetMapping("/history")
+    public ResponseEntity<List<ScheduleHistoryItem>> getHistory(
+            @AuthenticationPrincipal AuthUserPrincipal principal
+    ) {
+        return ResponseEntity.ok(scheduleHistoryService.findRecentForUser(principal.userId()));
+    }
 
     @PostMapping
     public ResponseEntity<ScheduleResult> createSchedule(
             @AuthenticationPrincipal AuthUserPrincipal principal,
             @RequestBody ScheduleRequest request,
-            @RequestParam(defaultValue = "naive") String algorithm
+            @RequestParam(defaultValue = "naive") String algorithm,
+            @RequestParam(defaultValue = "true") boolean persist
     ) {
         if (request.priceZone() != null && !request.priceZone().isBlank()) {
             normalizeAndValidateZone(request.priceZone());
@@ -48,7 +61,7 @@ public class ScheduleController {
         ScheduleResult schedule = schedulingService.createSchedule(
             request,
             algorithm,
-            principal.userId()
+            persist ? principal.userId() : null
         );
         return ResponseEntity.ok(schedule);
     }
