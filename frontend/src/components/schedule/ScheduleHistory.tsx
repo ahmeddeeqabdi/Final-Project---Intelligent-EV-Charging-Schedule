@@ -13,12 +13,12 @@ export function ScheduleHistory() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg"><Clock3 className="h-5 w-5" />Recent plans</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-lg"><Clock3 className="h-5 w-5 text-primary" />Your recent plans</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {history.data.slice(0, 6).map((item) => (
-            <div key={item.id} className="border border-border bg-background p-3">
+            <div key={item.id} className="rounded-md border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="font-bold capitalize">{item.algorithm}</p>

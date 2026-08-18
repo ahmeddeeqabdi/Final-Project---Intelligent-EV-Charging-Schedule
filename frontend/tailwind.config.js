@@ -30,11 +30,15 @@ export default {
           DEFAULT: 'hsl(var(--warning))',
           foreground: 'hsl(var(--warning-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
       },
       borderRadius: {
-        lg: '0px',
-        md: '0px',
-        sm: '0px',
+        lg: '1rem',
+        md: '0.75rem',
+        sm: '0.5rem',
       },
       fontFamily: {
         sans: ['"IBM Plex Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -43,11 +47,10 @@ export default {
       },
       boxShadow: {
         soft: '0 18px 35px rgba(15, 73, 66, 0.12)',
-        hard: '3px 3px 0px 0px rgba(26,26,26,1)',
-        'hard-sm': '2px 2px 0px 0px rgba(26,26,26,1)',
+        hard: '0 12px 28px rgba(15, 23, 42, 0.10)',
+        'hard-sm': '0 4px 12px rgba(15, 23, 42, 0.08)',
       },
     },
   },
   plugins: [],
 }
-

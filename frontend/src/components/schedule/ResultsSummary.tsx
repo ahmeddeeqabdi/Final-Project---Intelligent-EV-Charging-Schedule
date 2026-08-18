@@ -1,4 +1,4 @@
-import { BatteryCharging, Clock3, Coins, Leaf } from 'lucide-react'
+import { BatteryCharging, CheckCircle2, Clock3, Coins, Leaf } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { type ScheduleResult } from '@/types/api'
 
@@ -42,20 +42,23 @@ export function ResultsSummary({ result, baseline, currentSoC = 0, targetSoC = 0
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {isLoading ? <div className="col-span-full inline-flex min-h-24 items-center justify-center gap-2 border border-border"><Spinner />Building your plan…</div> : null}
+    <div className="space-y-3" aria-live="polite">
+      {isLoading ? <div className="inline-flex min-h-24 w-full items-center justify-center gap-2 rounded-lg border border-border"><Spinner />Building your plan…</div> : null}
+      {result && !isLoading ? <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 p-4"><span className="grid h-10 w-10 place-items-center rounded-full bg-success text-success-foreground"><CheckCircle2 className="h-5 w-5" /></span><div><p className="font-semibold text-success">Your charging plan is ready</p><p className="text-sm text-muted-foreground">Charging is scheduled to finish by {readyText}.</p></div></div> : null}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {!isLoading ? [
-        { icon: Coins, label: 'Estimated cost', value: costText, note: savings > 0.005 ? `${currencyFormatter.format(savings)} less than charging now` : 'For this charging session' },
-        { icon: Leaf, label: 'Carbon footprint', value: co2Text, note: result ? `${result.algorithm} strategy` : '—' },
-        { icon: Clock3, label: 'Start charging', value: startText, note: `Ready by ${readyText}` },
-        { icon: BatteryCharging, label: 'Expected battery', value: result ? `${Math.round(finalSoc)}%` : '--', note: `Target ${targetSoC}%` },
-      ].map(({ icon: Icon, label, value, note }) => (
-        <div key={label} className="border border-border bg-card p-4 shadow-hard-sm">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"><Icon className="h-4 w-4" />{label}</p>
+        { icon: Coins, label: 'Estimated cost', value: costText, note: savings > 0.005 ? `${currencyFormatter.format(savings)} saved versus charging now` : 'For this charging session', positive: savings > 0.005 },
+        { icon: Leaf, label: 'Carbon footprint', value: co2Text, note: 'Estimated charging emissions', positive: false },
+        { icon: Clock3, label: 'Start charging', value: startText, note: `Ready by ${readyText}`, positive: true },
+        { icon: BatteryCharging, label: 'Battery at departure', value: result ? `${Math.round(finalSoc)}%` : '--', note: `Your target is ${targetSoC}%`, positive: true },
+      ].map(({ icon: Icon, label, value, note, positive }) => (
+        <div key={label} className={`rounded-lg border bg-card p-4 shadow-sm ${positive ? 'border-success/35' : 'border-border'}`}>
+          <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Icon className={`h-4 w-4 ${positive ? 'text-success' : 'text-primary'}`} />{label}</p>
           <p className="mt-2 font-display text-2xl font-bold text-foreground">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{note}</p>
+          <p className={`mt-1 text-xs ${positive ? 'text-success' : 'text-muted-foreground'}`}>{note}</p>
         </div>
       )) : null}
+      </div>
     </div>
   )
 }

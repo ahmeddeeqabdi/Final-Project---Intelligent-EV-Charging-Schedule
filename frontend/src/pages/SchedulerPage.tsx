@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, CarFront, LogOut, Moon, Sun } from 'lucide-react'
+import { AlertTriangle, BarChart3, CarFront, ChevronRight, List, LogOut, Moon, Sun } from 'lucide-react'
 import { ResponsiveDashboard } from '@/components/layout/ResponsiveDashboard'
 import { PlanBreakdown } from '@/components/schedule/PlanBreakdown'
 import { ScheduleActions } from '@/components/schedule/ScheduleActions'
-import { ScheduleChart } from '@/components/schedule/ScheduleChart'
 import { ScheduleForm } from '@/components/schedule/ScheduleForm'
 import { ScheduleHistory } from '@/components/schedule/ScheduleHistory'
+import { ScheduleLoadingState } from '@/components/schedule/ScheduleLoadingState'
 import { ResultsSummary } from '@/components/schedule/ResultsSummary'
 import { StatusBanner } from '@/components/schedule/StatusBanner'
 import { StrategyComparison } from '@/components/schedule/StrategyComparison'
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { type OptimizationAlgorithm, type ScheduleFormValues } from '@/types/api'
 
 type ThemeMode = 'light' | 'dark'
+const ScheduleChart = lazy(() => import('@/components/schedule/ScheduleChart').then((module) => ({ default: module.ScheduleChart })))
 const INTRO_DURATION_MS = 1400
 const INTRO_STORAGE_KEY = 'ev-scheduler-intro-seen'
 
@@ -49,6 +50,7 @@ function SchedulerPage() {
   } | null>(null)
   const [lastValues, setLastValues] = useState<ScheduleFormValues | null>(null)
   const [activeAlgorithm, setActiveAlgorithm] = useState<OptimizationAlgorithm>('greedy')
+  const resultsRef = useRef<HTMLDivElement>(null)
 
 
   useEffect(() => {
@@ -102,7 +104,12 @@ function SchedulerPage() {
     })
     setLastValues(values)
     setActiveAlgorithm(values.algorithm)
-    scheduleMutation.mutate(values)
+    scheduleMutation.mutate(values, {
+      onSuccess: () => window.setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        resultsRef.current?.focus({ preventScroll: true })
+      }, 80),
+    })
   }
 
   const handleSaveDefaults = (values: ScheduleFormValues) => {
@@ -155,41 +162,34 @@ function SchedulerPage() {
           }
         }}
       />
-      <div className="mx-auto max-w-screen-2xl px-4 pb-2 pt-2 sm:px-6 lg:px-10">
-        <header className="mb-4 border-b-4 border-foreground pb-4 relative mt-3">
+      <div className="mx-auto max-w-screen-2xl px-4 pb-8 pt-2 sm:px-6 lg:px-10">
+        <header className="relative mb-6 mt-3 border-b border-border pb-5">
           <div className="flex flex-wrap items-start justify-between gap-3 relative">
             <div className="max-w-4xl">
-              <div className="flex items-center gap-4">
-                <span className="inline-block border-2 border-foreground px-2 py-0.5 font-sans text-xs font-bold uppercase tracking-widest bg-foreground text-background shadow-hard-sm">
-                  Ready
-                </span>
-                <p className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  EV Charging Scheduler
-                </p>
-              </div>
-              <h1 className="mt-3 max-w-none whitespace-nowrap font-display text-3xl font-extrabold uppercase tracking-tighter text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
-                PLAN YOUR NEXT CHARGE
+              <p className="font-semibold text-primary">EV Charging Scheduler</p>
+              <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Plan your next charge
               </h1>
-              <p className="mt-2 text-xs font-bold tracking-widest uppercase text-muted-foreground">Signed in as {user?.email}</p>
+              <p className="mt-2 text-sm text-muted-foreground">Save money, reduce emissions, and leave with the battery level you need.</p>
             </div>
             <div className="flex items-center gap-2 self-start flex-col items-end">
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="secondary"
-                  className="shadow-hard-sm border-2 border-foreground"
+                  className="px-3"
                 onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
                 aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                 title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button type="button" variant="secondary" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold" onClick={logout}>
+              <Button type="button" variant="secondary" onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </Button>
               {user?.role === 'ADMIN' ? (
-                <Button asChild type="button" variant="secondary" className="min-h-11 shadow-hard-sm border-2 border-foreground uppercase tracking-widest text-xs font-bold">
+                <Button asChild type="button" variant="secondary">
                   <Link to="/admin">Admin tools</Link>
                 </Button>
               ) : null}
@@ -210,25 +210,27 @@ function SchedulerPage() {
             />
           }
           content={
-            <div className="space-y-2 sm:space-y-3">
-              <ResultsSummary result={schedule} baseline={baseline} currentSoC={lastValues?.currentSoC} targetSoC={lastValues?.targetSoC} batteryCapacity={lastValues?.batteryCapacity} isLoading={scheduleMutation.isPending} />
+            <div ref={resultsRef} tabIndex={-1} className="space-y-4 outline-none" aria-label="Charging plan results">
+              {scheduleMutation.isPending ? <ScheduleLoadingState /> : <ResultsSummary result={schedule} baseline={baseline} currentSoC={lastValues?.currentSoC} targetSoC={lastValues?.targetSoC} batteryCapacity={lastValues?.batteryCapacity} isLoading={false} />}
               {scheduleMutation.data && lastValues ? <StrategyComparison comparisons={scheduleMutation.data.comparisons} active={activeAlgorithm} costWeight={lastValues.costWeight} onSelect={setActiveAlgorithm} /> : null}
               <ScheduleActions result={schedule} />
-              <ScheduleChart
-                slots={schedule?.slots ?? []}
-                marketSignals={schedule?.marketSignals ?? []}
-                isLoading={scheduleMutation.isPending}
-                windowStart={lastRequestWindow?.startTime ?? null}
-                windowEnd={lastRequestWindow?.endTime ?? null}
-              />
-              <PlanBreakdown result={schedule} isLoading={scheduleMutation.isPending} />
+              {schedule ? <div className="grid gap-3">
+                <details className="group rounded-lg border border-border bg-card shadow-sm">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between p-4 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><span className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" />Explore price, CO2, and power chart</span><ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" /></summary>
+                  <div className="border-t border-border p-4"><Suspense fallback={<ScheduleLoadingState />}><ScheduleChart slots={schedule.slots} marketSignals={schedule.marketSignals} isLoading={false} windowStart={lastRequestWindow?.startTime ?? null} windowEnd={lastRequestWindow?.endTime ?? null} /></Suspense></div>
+                </details>
+                <details className="group rounded-lg border border-border bg-card shadow-sm">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between p-4 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><span className="flex items-center gap-2"><List className="h-5 w-5 text-primary" />View the hour-by-hour breakdown</span><ChevronRight className="h-5 w-5 transition-transform group-open:rotate-90" /></summary>
+                  <div className="border-t border-border p-4"><PlanBreakdown result={schedule} isLoading={false} /></div>
+                </details>
+              </div> : null}
               <ScheduleHistory />
 
               {scheduleMutation.error ? (
                 <Card className="border-warning/50 bg-warning/20">
                   <CardContent className="flex items-start gap-3 p-4">
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-foreground" />
-                    <div className="space-y-1 text-sm text-white">
+                    <div className="space-y-1 text-sm text-foreground">
                       <p className="font-semibold">Unable to build a charging schedule</p>
                       <p>{scheduleMutation.error.message}</p>
                       {scheduleMutation.error.status === 400 ? (

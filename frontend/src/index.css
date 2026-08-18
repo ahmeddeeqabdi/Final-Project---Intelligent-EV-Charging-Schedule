@@ -20,6 +20,8 @@
   --card-foreground: 0 0% 10%; /* #1A1A1A */
   --warning: 41 96% 61%;
   --warning-foreground: 27 56% 21%;
+  --success: 151 55% 34%;
+  --success-foreground: 0 0% 100%;
 }
 
 .dark {
@@ -39,6 +41,8 @@
   --card-foreground: 43 27% 94%;
   --warning: 41 96% 41%;
   --warning-foreground: 27 56% 91%;
+  --success: 151 48% 48%;
+  --success-foreground: 0 0% 8%;
 }
 
 * {
@@ -46,7 +50,8 @@
 }
 
 html {
-  font-size: 70%;
+  font-size: 100%;
+  scroll-behavior: smooth;
 }
 
 body {

@@ -133,15 +133,15 @@ export function PlanBreakdown({ result, isLoading }: PlanBreakdownProps) {
   return (
     <div className="pt-4 lg:pr-2">
       <div className="mb-4">
-        <h3 className="font-display text-[2.1rem] font-bold tracking-tight text-foreground">Plan breakdown</h3>
-        <p className="mt-1 font-sans text-[1.05rem] text-muted-foreground">
-          Slot-by-slot economics and sustainability for the selected charging windows.
+        <h3 className="font-display text-xl font-semibold text-foreground">Hour-by-hour charging</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          See exactly when the car charges and what each hour contributes.
         </p>
       </div>
       <div>
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-[1.05rem] tabular-nums">
-            <thead className="border-b-2 border-foreground uppercase tracking-[0.1em] text-foreground">
+          <table className="min-w-full border-collapse text-sm tabular-nums">
+            <thead className="border-b border-border text-foreground">
               <tr>
                 <th className="py-3 pr-4 text-left font-semibold">Window</th>
                 <th className="py-3 px-4 text-right font-semibold">Power</th>

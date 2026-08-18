@@ -49,10 +49,11 @@ interface MarkerBadgeProps {
   color: string
 }
 
-const POWER_COLOR = '#D95C14' // Burnt Orange
-const PRICE_COLOR = '#1A1A1A' // Charcoal
-const CO2_COLOR = '#5C5C5C'   // Muted gray
-const RIGHT_AXIS_COLOR = '#1A1A1A'
+const POWER_COLOR = 'hsl(var(--primary))'
+const PRICE_COLOR = 'hsl(var(--foreground))'
+const CO2_COLOR = 'hsl(var(--muted-foreground))'
+const RIGHT_AXIS_COLOR = 'hsl(var(--foreground))'
+const GRID_COLOR = 'hsl(var(--border))'
 
 const twoDecimal = new Intl.NumberFormat('en-DK', {
   minimumFractionDigits: 2,
@@ -320,9 +321,9 @@ export function ScheduleChart({
   if (isLoading) {
     return (
       <div className="pt-2 lg:pt-1">
-        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
+        <h3 className="mb-3 font-display text-xl font-semibold text-foreground">Charging signals</h3>
         <div className="flex min-h-[260px] items-center justify-center border border-border bg-card">
-          <div className="inline-flex min-h-11 items-center gap-2 text-base font-semibold tracking-wide text-muted-foreground uppercase">
+          <div className="inline-flex min-h-11 items-center gap-2 text-base font-semibold text-muted-foreground">
             <Spinner className="h-5 w-5" />
             Rendering optimized schedule...
           </div>
@@ -334,8 +335,8 @@ export function ScheduleChart({
   if (!chartData.length) {
     return (
       <div className="pt-2 lg:pt-1">
-        <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
-        <div className="flex min-h-[260px] items-center justify-center border border-border bg-card p-6 text-center text-base font-semibold tracking-wide text-muted-foreground uppercase">
+        <h3 className="mb-3 font-display text-xl font-semibold text-foreground">Charging signals</h3>
+        <div className="flex min-h-[260px] items-center justify-center border border-border bg-card p-6 text-center text-base font-semibold text-muted-foreground">
           Submit constraints to visualize charging power, spot prices, and CO2 intensity over time.
         </div>
       </div>
@@ -344,7 +345,7 @@ export function ScheduleChart({
 
   return (
     <div className="pt-2 lg:pt-1">
-      <h3 className="font-display text-2xl font-bold tracking-tight text-foreground mb-3">Charging Plan Timeline</h3>
+      <h3 className="mb-3 font-display text-xl font-semibold text-foreground">Charging signals</h3>
       <div className="px-0 pb-4 lg:pr-2">
         <div className="h-[240px] w-full sm:h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -352,15 +353,15 @@ export function ScheduleChart({
               {departureMarkerMs ? (
                 <ReferenceLine
                   x={departureMarkerMs}
-                  stroke="#1A1A1A"
+                  stroke={RIGHT_AXIS_COLOR}
                   strokeWidth={2}
                   strokeDasharray="4 4"
                   yAxisId="left"
                   ifOverflow="extendDomain"
-                  label={<MarkerBadge text="DEADLINE" color="#1A1A1A" />}
+                  label={<MarkerBadge text="DEPARTURE" color={RIGHT_AXIS_COLOR} />}
                 />
               ) : null}
-              <CartesianGrid strokeDasharray="0" vertical={false} stroke="#E0DDD5" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_COLOR} />
               <XAxis
                 type="number"
                 dataKey="timestampMs"
@@ -369,17 +370,17 @@ export function ScheduleChart({
                 tick={{ fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif', fill: '#5C5C5C' }}
                 tickFormatter={(value: number) => toLabel(new Date(value).toISOString())}
                 minTickGap={14}
-                axisLine={{ stroke: '#E0DDD5' }}
-                tickLine={{ stroke: '#E0DDD5' }}
+                axisLine={{ stroke: GRID_COLOR }}
+                tickLine={{ stroke: GRID_COLOR }}
               />
               <YAxis
                 yAxisId="left"
                 tick={{ fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif', fill: POWER_COLOR }}
                 tickFormatter={(value: number) => `${integerFormatter.format(value)}`}
-                label={{ value: 'POWER (kW)', angle: -90, position: 'insideLeft', fill: POWER_COLOR, fontSize: 10, fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 600, letterSpacing: '0.1em' }}
+                label={{ value: 'Power (kW)', angle: -90, position: 'insideLeft', fill: POWER_COLOR, fontSize: 11, fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 600 }}
                 width={50}
-                axisLine={{ stroke: '#E0DDD5' }}
-                tickLine={{ stroke: '#E0DDD5' }}
+                axisLine={{ stroke: GRID_COLOR }}
+                tickLine={{ stroke: GRID_COLOR }}
               />
               <YAxis
                 yAxisId="right"
@@ -388,7 +389,7 @@ export function ScheduleChart({
                 tickFormatter={(value: number) => `${integerFormatter.format(value)}%`}
                 domain={[0, 100]}
                 label={{
-                  value: 'RELATIVE SCORE',
+                  value: 'Relative score',
                   angle: 90,
                   position: 'center',
                   dx: 30,
@@ -396,10 +397,10 @@ export function ScheduleChart({
                   fontSize: 10,
                   fontFamily: '"IBM Plex Sans", sans-serif',
                   fontWeight: 600,
-                  letterSpacing: '0.1em'
+                  letterSpacing: '0'
                 }}
                 width={70}
-                axisLine={{ stroke: '#E0DDD5' }}
+                axisLine={{ stroke: GRID_COLOR }}
                 tickLine={false}
               />
               <Tooltip
@@ -416,7 +417,7 @@ export function ScheduleChart({
 
                   return (
                     <div className="min-w-[220px] bg-card border border-border p-3 shadow-hard-sm text-base">
-                      <p className="text-base font-semibold uppercase tracking-wider text-muted-foreground mb-3">{point.intervalLabel}</p>
+                      <p className="mb-3 text-base font-semibold text-muted-foreground">{point.intervalLabel}</p>
                       <div className="space-y-1.5 tabular-nums">
                         <p className="flex justify-between">
                           <span className="font-semibold text-foreground mr-6">Action</span> {point.actionLabel}

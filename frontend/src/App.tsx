@@ -1,13 +1,18 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import AdminPage from '@/pages/AdminPage'
 import { LoginPage } from '@/pages/LoginPage'
-import SchedulerPage from '@/pages/SchedulerPage'
 import { SignupPage } from '@/pages/SignupPage'
+import { Spinner } from '@/components/ui/spinner'
+
+const AdminPage = lazy(() => import('@/pages/AdminPage'))
+const SchedulerPage = lazy(() => import('@/pages/SchedulerPage'))
+
+const pageFallback = <div className="grid min-h-screen place-items-center"><div className="flex items-center gap-2 text-muted-foreground"><Spinner />Loading…</div></div>
 
 function App() {
   return (
-    <Routes>
+    <Suspense fallback={pageFallback}><Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route
@@ -35,7 +40,7 @@ function App() {
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </Routes></Suspense>
   )
 }
 
