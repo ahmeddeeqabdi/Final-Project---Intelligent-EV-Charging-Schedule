@@ -20,6 +20,7 @@ frontend/dist-ssr/
 *.local
 
 # IDE and OS metadata
+.vscode/
 backend/.vscode/
 .idea/
 .DS_Store
