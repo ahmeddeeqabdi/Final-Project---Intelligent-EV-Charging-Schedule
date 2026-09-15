@@ -12,7 +12,7 @@
     <artifactId>sdu</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>sdu</name>
-    <description>Demo project for Spring Boot</description>
+    <description>Full-stack optimizer for cost- and carbon-aware EV charging schedules</description>
     <url/>
     <licenses>
         <license/>
@@ -113,6 +113,15 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -223,7 +232,7 @@
                         </goals>
                         <phase>prepare-package</phase>
                         <configuration>
-                            <nodeVersion>v24.14.0</nodeVersion>
+                            <nodeVersion>v24.15.0</nodeVersion>
                             <npmVersion>11.9.0</npmVersion>
                         </configuration>
                     </execution>

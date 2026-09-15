@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Intelligent EV Charging Scheduler product preview</title>
+  <desc id="desc">Dark dashboard showing charging preferences, an optimized schedule, key metrics, and a comparison of four algorithms.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#121212"/>
+      <stop offset="1" stop-color="#191919"/>
+    </linearGradient>
+    <linearGradient id="ready" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#173b31"/>
+      <stop offset="1" stop-color="#132821"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+  </defs>
+
+  <rect width="1440" height="810" fill="url(#bg)"/>
+  <circle cx="1320" cy="-40" r="250" fill="#f47b38" opacity=".045"/>
+  <circle cx="80" cy="830" r="260" fill="#34c997" opacity=".035"/>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <text x="55" y="54" fill="#f47b38" font-size="16" font-weight="700" letter-spacing="1.1">EV CHARGING SCHEDULER</text>
+    <text x="55" y="104" fill="#f7f7f5" font-size="44" font-weight="750">Plan your next charge</text>
+    <text x="55" y="137" fill="#999b98" font-size="16">Save money, reduce emissions, and leave with the battery level you need.</text>
+    <rect x="1272" y="43" width="116" height="45" rx="12" fill="#191919" stroke="#343434"/>
+    <text x="1300" y="71" fill="#dededb" font-size="14" font-weight="650">Sign out</text>
+    <path d="M55 164H1385" stroke="#2c2c2c"/>
+
+    <g filter="url(#shadow)">
+      <rect x="55" y="194" width="455" height="560" rx="18" fill="#1c1c1c" stroke="#343434"/>
+      <rect x="540" y="194" width="845" height="132" rx="18" fill="url(#ready)" stroke="#286b56"/>
+    </g>
+
+    <text x="83" y="232" fill="#f2f2ef" font-size="20" font-weight="720">Create your charging plan</text>
+    <text x="83" y="260" fill="#999b98" font-size="14">Three quick steps. Adjust the technical settings if you want to.</text>
+
+    <g font-size="13" font-weight="650">
+      <circle cx="99" cy="307" r="15" fill="#34c997"/>
+      <path d="m92 307 5 5 9-10" fill="none" stroke="#10251e" stroke-width="3" stroke-linecap="round"/>
+      <text x="123" y="312" fill="#50d7a9">Vehicle</text>
+      <circle cx="232" cy="307" r="15" fill="#34c997"/>
+      <path d="m225 307 5 5 9-10" fill="none" stroke="#10251e" stroke-width="3" stroke-linecap="round"/>
+      <text x="256" y="312" fill="#50d7a9">Charging needs</text>
+      <rect x="382" y="287" width="102" height="41" rx="11" fill="#493226"/>
+      <circle cx="402" cy="307" r="13" fill="#f47b38"/>
+      <path d="M396 303h12M396 308h12M400 299v16" stroke="#2a1b14" stroke-width="2"/>
+      <text x="422" y="312" fill="#f4eee9">Preferences</text>
+    </g>
+    <path d="M55 350H510" stroke="#343434"/>
+
+    <text x="83" y="393" fill="#f2f2ef" font-size="22" font-weight="720">What matters most?</text>
+    <text x="83" y="422" fill="#a3a4a1" font-size="14">Choose a simple preference. We handle the technical details.</text>
+    <text x="83" y="468" fill="#dededb" font-size="14" font-weight="650">Price and environmental balance</text>
+    <rect x="83" y="497" width="394" height="8" rx="4" fill="#353535"/>
+    <rect x="83" y="497" width="197" height="8" rx="4" fill="#f47b38"/>
+    <circle cx="280" cy="501" r="11" fill="#202020" stroke="#f47b38" stroke-width="3"/>
+    <text x="83" y="536" fill="#8d8e8b" font-size="13">Cleaner</text>
+    <rect x="216" y="517" width="128" height="32" rx="16" fill="#2a2a2a"/>
+    <text x="241" y="538" fill="#d7d7d3" font-size="13" font-weight="650">50% price focus</text>
+    <text x="426" y="536" fill="#8d8e8b" font-size="13">Cheaper</text>
+
+    <rect x="83" y="575" width="394" height="61" rx="13" fill="#181818" stroke="#363636"/>
+    <text x="109" y="612" fill="#dededb" font-size="15" font-weight="650">Advanced planning settings</text>
+    <path d="m445 598 7 7-7 7" fill="none" stroke="#aaa" stroke-width="2"/>
+    <rect x="83" y="663" width="394" height="66" rx="13" fill="#173b31" stroke="#286b56"/>
+    <text x="104" y="690" fill="#50d7a9" font-size="15" font-weight="700">Ready to create your plan</text>
+    <text x="104" y="714" fill="#a7bbb4" font-size="13">Charge 42.4 kWh before Tue 03:00 PM.</text>
+
+    <circle cx="577" cy="244" r="24" fill="#34c997"/>
+    <circle cx="577" cy="244" r="10" fill="none" stroke="#173b31" stroke-width="3"/>
+    <path d="m572 244 4 4 7-8" fill="none" stroke="#173b31" stroke-width="2.5"/>
+    <text x="617" y="239" fill="#50d7a9" font-size="18" font-weight="720">Your charging plan is ready</text>
+    <text x="617" y="265" fill="#a7bbb4" font-size="14">Charging is scheduled to finish before departure.</text>
+
+    <g>
+      <rect x="540" y="349" width="197" height="130" rx="16" fill="#1c1c1c" stroke="#343434"/>
+      <rect x="752" y="349" width="197" height="130" rx="16" fill="#1c1c1c" stroke="#343434"/>
+      <rect x="964" y="349" width="197" height="130" rx="16" fill="#1c1c1c" stroke="#286b56"/>
+      <rect x="1176" y="349" width="209" height="130" rx="16" fill="#1c1c1c" stroke="#343434"/>
+      <g fill="#9d9e9b" font-size="13" font-weight="650">
+        <text x="563" y="380">ESTIMATED COST</text>
+        <text x="775" y="380">CARBON FOOTPRINT</text>
+        <text x="987" y="380">START CHARGING</text>
+        <text x="1199" y="380">BATTERY AT DEPARTURE</text>
+      </g>
+      <g fill="#f4f4f1" font-size="27" font-weight="750">
+        <text x="563" y="421">72.14 DKK</text>
+        <text x="775" y="421">1,958 gCO2</text>
+        <text x="987" y="421">Tue 05:43</text>
+        <text x="1199" y="421">80%</text>
+      </g>
+      <g fill="#80817f" font-size="12">
+        <text x="563" y="450">For this charging session</text>
+        <text x="775" y="450">Estimated charging emissions</text>
+        <text x="987" y="450" fill="#50d7a9">Ready before departure</text>
+        <text x="1199" y="450" fill="#50d7a9">Target achieved</text>
+      </g>
+    </g>
+
+    <rect x="540" y="502" width="845" height="230" rx="18" fill="#1c1c1c" stroke="#343434"/>
+    <text x="566" y="541" fill="#f2f2ef" font-size="20" font-weight="720">Compare other plans</text>
+    <text x="566" y="568" fill="#969794" font-size="13">Select an alternative to compare cost, emissions, and technical method.</text>
+
+    <g>
+      <rect x="566" y="594" width="184" height="111" rx="14" fill="#202020" stroke="#383838"/>
+      <rect x="765" y="594" width="184" height="111" rx="14" fill="#202020" stroke="#383838"/>
+      <rect x="964" y="594" width="184" height="111" rx="14" fill="#3b281f" stroke="#f47b38" stroke-width="2"/>
+      <rect x="1163" y="594" width="196" height="111" rx="14" fill="#202020" stroke="#383838"/>
+      <g fill="#eeeeeb" font-size="14" font-weight="680">
+        <text x="583" y="624">Charge immediately</text>
+        <text x="782" y="624">Balanced and fast</text>
+        <text x="981" y="624">Best overall balance</text>
+        <text x="1180" y="624">Most precise</text>
+      </g>
+      <text x="583" y="649" fill="#50d7a9" font-size="12" font-weight="650">Recommended</text>
+      <text x="981" y="649" fill="#f47b38" font-size="12" font-weight="650">Currently viewing</text>
+      <g fill="#b8b8b4" font-size="13">
+        <text x="583" y="675">59.50 DKK</text><text x="583" y="695">Naive baseline</text>
+        <text x="782" y="675">72.97 DKK</text><text x="782" y="695">Greedy heuristic</text>
+        <text x="981" y="675">72.14 DKK</text><text x="981" y="695">Dynamic programming</text>
+        <text x="1180" y="675">59.50 DKK</text><text x="1180" y="695">Mixed-integer</text>
+      </g>
+      <path d="m1121 614 5 5 9-10" fill="none" stroke="#f47b38" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <g transform="translate(540 754)">
+      <rect width="845" height="1" fill="#2f2f2f"/>
+      <circle cx="18" cy="25" r="4" fill="#f47b38"/>
+      <text x="32" y="30" fill="#9e9f9b" font-size="12">Hourly market signals</text>
+      <circle cx="200" cy="25" r="4" fill="#34c997"/>
+      <text x="214" y="30" fill="#9e9f9b" font-size="12">Live strategy comparison</text>
+      <circle cx="401" cy="25" r="4" fill="#72a5ff"/>
+      <text x="415" y="30" fill="#9e9f9b" font-size="12">Export to CSV and calendar</text>
+    </g>
+  </g>
+</svg>

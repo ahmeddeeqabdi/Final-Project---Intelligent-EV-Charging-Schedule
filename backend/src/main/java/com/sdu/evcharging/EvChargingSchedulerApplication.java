@@ -1,6 +1,7 @@
 package com.sdu.evcharging;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,12 @@ public class EvChargingSchedulerApplication {
     }
 
     @Bean
+    @ConditionalOnProperty(
+            prefix = "app.data-sync",
+            name = "startup-enabled",
+            havingValue = "true",
+            matchIfMissing = true
+    )
     public CommandLineRunner initialDataSync(GridDataSyncService gridDataSyncService) {
         return args -> {
             gridDataSyncService.syncTodayAndTomorrowAllZones("startup");

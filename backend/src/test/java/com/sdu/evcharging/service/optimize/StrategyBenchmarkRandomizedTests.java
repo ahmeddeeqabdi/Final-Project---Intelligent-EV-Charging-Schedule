@@ -12,13 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import com.sdu.evcharging.domain.strategy.GridData;
-import com.sdu.evcharging.domain.strategy.UserConstraints;
 import com.sdu.evcharging.dto.schedule.ChargingSlot;
 import com.sdu.evcharging.dto.schedule.ScheduleResult;
 
 class StrategyBenchmarkRandomizedTests {
 
-    private static final double STEP_SIZE_KWH = 0.5;
     private static final double EPS = 1e-9;
     private static final long SEED = 20260413L;
     private static final int SCENARIOS = 300;
@@ -44,7 +42,7 @@ class StrategyBenchmarkRandomizedTests {
         List<Double> greedyLatenciesMs = new ArrayList<>();
 
         for (int i = 0; i < SCENARIOS; i++) {
-            Scenario scenario = generateFeasibleScenario(random, i);
+            BenchmarkScenarioFactory.Scenario scenario = BenchmarkScenarioFactory.generateFeasibleScenario(random, i);
 
             long startOptimal = System.nanoTime();
             ScheduleResult optimalResult = optimal.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
@@ -153,63 +151,6 @@ class StrategyBenchmarkRandomizedTests {
                 optimalRealWorldSummary.p95(), greedyRealWorldSummary.p95());
     }
 
-    private static Scenario generateFeasibleScenario(Random random, int index) {
-        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0).plusHours(index * 36L);
-
-        while (true) {
-            int slots = 4 + random.nextInt(21); // [4,24]
-            LocalDateTime departure = start.plusHours(slots);
-
-            double[] maxPowerOptions = {3.7, 7.4, 11.0, 22.0};
-            double maxPower = maxPowerOptions[random.nextInt(maxPowerOptions.length)];
-
-            double battery = 40.0 + random.nextDouble() * 60.0; // [40,100]
-            double currentSoc = 5.0 + random.nextDouble() * 65.0; // [5,70]
-            double targetSoc = Math.min(100.0, currentSoc + 10.0 + random.nextDouble() * 75.0);
-
-            double weightPrice = random.nextDouble();
-            double weightCo2 = random.nextDouble();
-            if (weightPrice + weightCo2 < 1e-6) {
-                weightPrice = 1.0;
-            }
-
-            UserConstraints constraints = new UserConstraints(
-                    currentSoc,
-                    targetSoc,
-                    battery,
-                    maxPower,
-                    start,
-                    departure,
-                    random.nextBoolean() ? "DK1" : "DK2",
-                    weightPrice,
-                    weightCo2);
-
-            List<GridData> priceData = new ArrayList<>(slots);
-            List<GridData> co2Data = new ArrayList<>(slots);
-
-            double priceBase = 0.10 + random.nextDouble() * 0.35;
-            double co2Base = 80.0 + random.nextDouble() * 320.0;
-
-            for (int h = 0; h < slots; h++) {
-                LocalDateTime ts = start.plusHours(h);
-                double dailyShape = 0.5 + 0.5 * Math.sin((2.0 * Math.PI * h) / 24.0);
-                double price = Math.max(0.02, priceBase + (dailyShape * 0.18) + (random.nextDouble() - 0.5) * 0.10);
-                double co2 = Math.max(20.0, co2Base + ((1.0 - dailyShape) * 140.0) + (random.nextDouble() - 0.5) * 120.0);
-                priceData.add(new GridData(ts, price));
-                co2Data.add(new GridData(ts, co2));
-            }
-
-            int maxStepsPerSlot = (int) Math.floor((maxPower / STEP_SIZE_KWH) + 1e-9);
-            int totalSteps = (int) Math.ceil((constraints.energyRequiredKwh() / STEP_SIZE_KWH) - 1e-9);
-            if (totalSteps <= 0) {
-                continue;
-            }
-            if ((long) maxStepsPerSlot * slots >= totalSteps) {
-                return new Scenario(constraints, priceData, co2Data);
-            }
-        }
-    }
-
     private static double objectiveValue(
             List<ChargingSlot> slots,
             List<GridData> priceData,
@@ -267,9 +208,6 @@ class StrategyBenchmarkRandomizedTests {
     private static double percentGap(double baselineValue, double targetValue) {
         double denom = Math.max(Math.abs(baselineValue), EPS);
         return ((baselineValue - targetValue) / denom) * 100.0;
-    }
-
-    private record Scenario(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {
     }
 
     private record BenchmarkSummary(double mean, double p50, double p95, double max) {

@@ -122,21 +122,18 @@ export const useSchedule = () => {
         ? ['naive', 'greedy', 'optimal', 'mip']
         : Array.from(new Set<OptimizationAlgorithm>([values.algorithm, 'naive']))
 
+      // Build the requested plan first. This both gives the user-facing result
+      // priority and lets any on-demand market-data refresh complete before the
+      // comparison requests start, avoiding duplicate concurrent data inserts.
+      const selected = await submitSchedule(values, values.algorithm, true)
+      const alternatives = algorithms.filter((algorithm) => algorithm !== values.algorithm)
       const attempts = await Promise.allSettled(
-        algorithms.map((algorithm) =>
-          submitSchedule(values, algorithm, algorithm === values.algorithm),
-        ),
+        alternatives.map((algorithm) => submitSchedule(values, algorithm, false)),
       )
       const results = attempts.flatMap((attempt) => attempt.status === 'fulfilled' ? [attempt.value] : [])
-      const comparisons = Object.fromEntries(results.map((result) => [result.algorithm, result]))
-      const selected = comparisons[values.algorithm]
-
-      if (!selected) {
-        const selectedAttempt = attempts[algorithms.indexOf(values.algorithm)]
-        if (selectedAttempt?.status === 'rejected' && selectedAttempt.reason instanceof ScheduleApiError) {
-          throw selectedAttempt.reason
-        }
-        throw new ScheduleApiError('The selected strategy did not return a result.', 500)
+      const comparisons: Partial<Record<OptimizationAlgorithm, ScheduleResult>> = {
+        ...Object.fromEntries(results.map((result) => [result.algorithm, result])),
+        [selected.algorithm]: selected,
       }
 
       return { selected, comparisons }

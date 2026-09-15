@@ -21,7 +21,6 @@ import com.sdu.evcharging.dto.schedule.ScheduleResult;
 @Service
 public class AdminBenchmarkService {
 
-    private static final double STEP_SIZE_KWH = 0.5;
     private static final int DEFAULT_SCENARIOS = 300;
     private static final int MAX_SCENARIOS = 2_000;
     private static final long DEFAULT_SEED = 20260413L;
@@ -55,7 +54,7 @@ public class AdminBenchmarkService {
 
         // 1. Warm-up Phase: Run all 50 times to force JIT and native lib loading
         for (int i = 0; i < 50; i++) {
-            Scenario scenario = generateFeasibleScenario(random, i);
+            BenchmarkScenarioFactory.Scenario scenario = BenchmarkScenarioFactory.generateFeasibleScenario(random, i);
             for (StrategyRunContext context : contexts.values()) {
                 context.strategy().solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
             }
@@ -63,7 +62,7 @@ public class AdminBenchmarkService {
 
         // 2. Measurement Phase
         for (int i = 0; i < scenarios; i++) {
-            Scenario scenario = generateFeasibleScenario(random, i);
+            BenchmarkScenarioFactory.Scenario scenario = BenchmarkScenarioFactory.generateFeasibleScenario(random, i);
 
             for (StrategyRunContext context : contexts.values()) {
                 TimedExecution execution = runTimed(context.strategy(), scenario);
@@ -92,13 +91,17 @@ public class AdminBenchmarkService {
         return new StrategyRunContext(strategy, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
-    private static TimedExecution runTimed(ChargingStrategy strategy, Scenario scenario) {
+    private static TimedExecution runTimed(ChargingStrategy strategy, BenchmarkScenarioFactory.Scenario scenario) {
         long start = System.nanoTime();
         ScheduleResult result = strategy.solve(scenario.constraints(), scenario.priceData(), scenario.co2Data());
         return new TimedExecution(result, nanosToMs(System.nanoTime() - start));
     }
 
-    private static void appendMeasurements(StrategyRunContext context, TimedExecution execution, Scenario scenario) {
+    private static void appendMeasurements(
+            StrategyRunContext context,
+            TimedExecution execution,
+            BenchmarkScenarioFactory.Scenario scenario
+    ) {
         ScheduleResult result = execution.result();
         double objective = objectiveValue(
                 result.slots(),
@@ -147,67 +150,6 @@ public class AdminBenchmarkService {
             throw new IllegalArgumentException("scenarios must be positive");
         }
         return Math.min(scenariosInput, MAX_SCENARIOS);
-    }
-
-    private static Scenario generateFeasibleScenario(Random random, int index) {
-        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0).plusHours(index * 36L);
-
-        while (true) {
-            // Generate between 20 and 500 slots to simulate high-frequency (5-min) dispatch scaling 
-            // or multi-day scenarios, legitimately testing the combinatorial limits of the MIP solver.
-            int slots = 20 + random.nextInt(481);
-            LocalDateTime departure = start.plusHours(slots);
-
-            double[] maxPowerOptions = {3.7, 7.4, 11.0, 22.0};
-            double maxPower = maxPowerOptions[random.nextInt(maxPowerOptions.length)];
-
-            double battery = 40.0 + random.nextDouble() * 60.0;
-            double currentSoc = 5.0 + random.nextDouble() * 65.0;
-            double targetSoc = Math.min(100.0, currentSoc + 10.0 + random.nextDouble() * 75.0);
-
-            double weightPrice = random.nextDouble();
-            double weightCo2 = random.nextDouble();
-            if (weightPrice + weightCo2 < 1e-6) {
-                weightPrice = 1.0;
-            }
-
-            UserConstraints constraints = new UserConstraints(
-                    currentSoc,
-                    targetSoc,
-                    battery,
-                    maxPower,
-                    start,
-                    departure,
-                    random.nextBoolean() ? "DK1" : "DK2",
-                    weightPrice,
-                    weightCo2
-            );
-
-            List<GridData> priceData = new ArrayList<>(slots);
-            List<GridData> co2Data = new ArrayList<>(slots);
-
-            double priceBase = 0.10 + random.nextDouble() * 0.35;
-            double co2Base = 80.0 + random.nextDouble() * 320.0;
-
-            for (int h = 0; h < slots; h++) {
-                // 15-minute resolution
-                LocalDateTime ts = start.plusMinutes(h * 15L);
-                double dailyShape = 0.5 + 0.5 * Math.sin((2.0 * Math.PI * (h / 4.0)) / 24.0);
-                double price = Math.max(0.02, priceBase + (dailyShape * 0.18) + (random.nextDouble() - 0.5) * 0.10);
-                double co2 = Math.max(20.0, co2Base + ((1.0 - dailyShape) * 140.0) + (random.nextDouble() - 0.5) * 120.0);
-                priceData.add(new GridData(ts, price));
-                co2Data.add(new GridData(ts, co2));
-            }
-
-            int maxStepsPerSlot = (int) Math.floor((maxPower / STEP_SIZE_KWH) + 1e-9);
-            int totalSteps = (int) Math.ceil((constraints.energyRequiredKwh() / STEP_SIZE_KWH) - 1e-9);
-            if (totalSteps <= 0) {
-                continue;
-            }
-            if ((long) maxStepsPerSlot * slots >= totalSteps) {
-                return new Scenario(constraints, priceData, co2Data);
-            }
-        }
     }
 
     private static double objectiveValue(
@@ -284,9 +226,6 @@ public class AdminBenchmarkService {
         GREEDY,
         MIP,
         NAIVE
-    }
-
-    private record Scenario(UserConstraints constraints, List<GridData> priceData, List<GridData> co2Data) {
     }
 
     private record MetricSummary(double mean, double p50, double p95, double max) {

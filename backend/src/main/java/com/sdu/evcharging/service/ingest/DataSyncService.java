@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,9 @@ public class DataSyncService {
     private final EnergyDataIngestService ingestService;
     private final EnergyPriceRepository energyPriceRepository;
     private final CO2IntensityRepository co2IntensityRepository;
+
+    @Value("${app.data-sync.historical-enabled:true}")
+    private boolean historicalSyncEnabled;
 
     public void syncSpotPrices(LocalDate date, String zone) {
         List<com.sdu.evcharging.dto.ingest.EdsSpotPriceRecord> records = ingestService.fetchSpotPrices(date, zone);
@@ -91,14 +95,13 @@ public class DataSyncService {
         log.info("CO2 sync done: zone={} date={} fetched={} inserted={}", zone, date, records.size(), inserted);
     }
 
-    
-
-
-
     @EventListener(ApplicationReadyEvent.class)
     public void syncHistoricalData() {
-        
-        
+        if (!historicalSyncEnabled) {
+            log.info("Historical data sync is disabled for this runtime profile");
+            return;
+        }
+
         if (energyPriceRepository.count() < 4000) {
             log.info("=== Database has less than 3 months of data. Starting/Resuming historical data sync ===");
             LocalDate endDate = LocalDate.now().plusDays(1);

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" role="img" aria-labelledby="title desc">
+  <title id="title">Dynamic programming and greedy strategy benchmark</title>
+  <desc id="desc">Across 300 deterministic hourly scenarios, dynamic programming had a mean modeled total cost of 10.0726 compared with 10.2161 for greedy, and 1.34 mean charging starts compared with 2.27.</desc>
+  <rect width="960" height="470" rx="20" fill="#111827"/>
+  <text x="48" y="55" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="26" font-weight="700">Seeded hourly benchmark · 300 scenarios</text>
+  <text x="48" y="83" fill="#9ca3af" font-family="system-ui, sans-serif" font-size="15">Dynamic programming versus greedy heuristic · seed 20260413</text>
+
+  <text x="48" y="132" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="17" font-weight="600">Mean modeled total cost</text>
+  <text x="48" y="158" fill="#9ca3af" font-family="system-ui, sans-serif" font-size="13">Lower is better · common scale starts at zero</text>
+  <text x="48" y="196" fill="#d1d5db" font-family="system-ui, sans-serif" font-size="14">Dynamic programming</text>
+  <rect x="205" y="178" width="600" height="25" rx="5" fill="#374151"/>
+  <rect x="205" y="178" width="591.6" height="25" rx="5" fill="#8b5cf6"/>
+  <text x="817" y="196" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="14" font-weight="600">10.0726</text>
+  <text x="48" y="236" fill="#d1d5db" font-family="system-ui, sans-serif" font-size="14">Greedy</text>
+  <rect x="205" y="218" width="600" height="25" rx="5" fill="#374151"/>
+  <rect x="205" y="218" width="600" height="25" rx="5" fill="#f59e0b"/>
+  <text x="817" y="236" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="14" font-weight="600">10.2161</text>
+  <text x="205" y="270" fill="#a78bfa" font-family="system-ui, sans-serif" font-size="15" font-weight="700">1.4659% lower modeled total cost with DP</text>
+
+  <line x1="48" y1="300" x2="912" y2="300" stroke="#374151"/>
+  <text x="48" y="340" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="17" font-weight="600">Mean charging starts</text>
+  <text x="48" y="366" fill="#9ca3af" font-family="system-ui, sans-serif" font-size="13">Fewer starts reduce switching penalties</text>
+  <text x="48" y="406" fill="#d1d5db" font-family="system-ui, sans-serif" font-size="14">Dynamic programming</text>
+  <rect x="205" y="388" width="600" height="25" rx="5" fill="#374151"/>
+  <rect x="205" y="388" width="354.2" height="25" rx="5" fill="#8b5cf6"/>
+  <text x="817" y="406" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="14" font-weight="600">1.34</text>
+  <text x="48" y="446" fill="#d1d5db" font-family="system-ui, sans-serif" font-size="14">Greedy</text>
+  <rect x="205" y="428" width="600" height="25" rx="5" fill="#374151"/>
+  <rect x="205" y="428" width="600" height="25" rx="5" fill="#f59e0b"/>
+  <text x="817" y="446" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="14" font-weight="600">2.27</text>
+</svg>

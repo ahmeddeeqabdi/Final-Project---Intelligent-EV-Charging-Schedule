@@ -1,5 +1,7 @@
 # Intelligent EV Charging Scheduler
 
+[![CI](https://github.com/ahmeddeeqabdi/Final-Project---Intelligent-EV-Charging-Schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmeddeeqabdi/Final-Project---Intelligent-EV-Charging-Schedule/actions/workflows/ci.yml)
+
 A full-stack application that creates EV charging schedules from electricity prices, CO2 intensity, vehicle constraints, and a user-selected optimization strategy.
 
 ## Highlights
@@ -9,6 +11,25 @@ A full-stack application that creates EV charging schedules from electricity pri
 - JWT authentication, saved user constraints, and role-protected admin tools
 - React and TypeScript dashboard with schedule and market-signal visualizations
 - Unit, integration, and randomized algorithm tests
+
+## Product preview
+
+![EV charging scheduler dashboard preview](./docs/product-preview.svg)
+
+The dashboard turns market signals and vehicle constraints into a concrete
+charging plan. Users can compare strategies, inspect earlier schedules, save
+vehicle profiles, and export a plan to CSV or calendar format.
+
+## Measured algorithm tradeoff
+
+The seeded regression benchmark uses 300 synthetic but realistic hourly
+charging scenarios. In the verified run, dynamic programming reduced modeled
+total cost by **1.4659%** versus the greedy heuristic and reduced mean charging
+starts from **2.27 to 1.34**.
+
+![Benchmark summary](./docs/benchmark-summary.svg)
+
+See the [benchmark methodology, results, and limitations](./docs/benchmark-report.md).
 
 ## Technology
 
@@ -25,7 +46,7 @@ A full-stack application that creates EV charging schedules from electricity pri
 ├── frontend/             React application
 ├── docs/                 Architecture and design notes
 ├── .github/workflows/    Continuous integration
-├── compose.yaml          Local PostgreSQL service
+├── compose.yaml          Complete local application stack
 └── .env.example          Environment variable template
 ```
 
@@ -62,12 +83,28 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-## Run with PostgreSQL
+## Run the complete stack with Docker
 
-Start PostgreSQL from the repository root:
+Build and start the packaged frontend, Spring Boot API, and PostgreSQL from the
+repository root:
 
 ```bash
-docker compose up -d
+docker compose up --build
+```
+
+Open `http://localhost:8080`. Compose uses local-development credentials by
+default; override them through `.env` before exposing the application outside
+your machine.
+
+Stop the stack with `docker compose down`. PostgreSQL data is retained in the
+named `postgres_data` volume.
+
+## Run PostgreSQL with the application outside Docker
+
+Start only the database:
+
+```bash
+docker compose up -d postgres
 ```
 
 Before starting the backend without the `local` profile, set a strong JWT secret of at least 32 characters:
@@ -96,6 +133,9 @@ Set-Location backend
 | `DB_URL` | No | `jdbc:postgresql://localhost:5432/mydatabase` | JDBC connection URL |
 | `DB_USERNAME` | No | `postgres` | Database user |
 | `DB_PASSWORD` | No | `postgres` | Database password for local Compose setup |
+| `APP_DATA_SYNC_HISTORICAL_ENABLED` | No | `true` in Spring, `false` in Compose | Backfill three months of grid data at startup |
+| `POSTGRES_PORT` | No | `5432` | Host port exposed by the PostgreSQL container |
+| `APP_PORT` | No | `8080` | Host port exposed by the application container |
 
 Copy [.env.example](./.env.example) when configuring an IDE or deployment environment. Spring Boot does not automatically load `.env` files in a normal shell, so export the variables or configure them through your runtime.
 
@@ -121,6 +161,7 @@ cd frontend
 npm ci
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 
@@ -132,6 +173,9 @@ cd backend
 ```
 
 The scheduling strategy design is documented in [docs/strategy-pattern.md](./docs/strategy-pattern.md).
+PostgreSQL schema changes are versioned through Flyway migrations under
+`backend/src/main/resources/db/migration`; Hibernate validates the migrated
+schema at startup.
 
 ## Security
 
