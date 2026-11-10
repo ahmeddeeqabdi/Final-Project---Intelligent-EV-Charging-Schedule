@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ApiError, apiRequest } from '@/services/apiClient'
 import {
-  type BackendErrorResponse,
   type BackendScheduleRequest,
   type BackendScheduleResult,
   type OptimizationAlgorithm,
@@ -10,23 +9,20 @@ import {
   type ScheduleResult,
 } from '@/types/api'
 
-export class ScheduleApiError extends Error {
-  status: number
-  details?: BackendErrorResponse
-
-  constructor(message: string, status: number, details?: BackendErrorResponse) {
-    super(message)
-    this.name = 'ScheduleApiError'
-    this.status = status
-    this.details = details
+/** Normalises every scheduling failure (HTTP, network, validation) into an ApiError with a status. */
+const toApiError = (caught: unknown): ApiError => {
+  if (caught instanceof ApiError) return caught
+  if (caught instanceof TypeError) {
+    return new ApiError('Cannot reach the scheduling service. Check that the backend is running and try again.', 503)
   }
+  return new ApiError(caught instanceof Error ? caught.message : 'Scheduling request failed. Please retry in a moment.', 500)
 }
 
 const mapFormToRequest = (values: ScheduleFormValues): BackendScheduleRequest => {
   const departureDate = new Date(values.departureTime)
 
   if (Number.isNaN(departureDate.getTime())) {
-    throw new ScheduleApiError('Invalid departure time format.', 400)
+    throw new ApiError('Invalid departure time format.', 400)
   }
 
   return {
@@ -79,44 +75,22 @@ export const submitSchedule = async (
   algorithm: OptimizationAlgorithm,
   persist: boolean,
 ): Promise<ScheduleResult> => {
-  const requestPayload = mapFormToRequest(values)
-  const search = new URLSearchParams({ algorithm, persist: String(persist) })
-
   try {
+    const search = new URLSearchParams({ algorithm, persist: String(persist) })
     const payload = await apiRequest<BackendScheduleResult>(`/api/v1/schedule?${search.toString()}`, {
       method: 'POST',
-      body: JSON.stringify(requestPayload),
+      body: JSON.stringify(mapFormToRequest(values)),
     })
-
     return mapBackendToUi(payload, algorithm)
   } catch (caught) {
-    if (caught instanceof ScheduleApiError) {
-      throw caught
-    }
-
-    if (caught instanceof ApiError) {
-      throw new ScheduleApiError(caught.message, caught.status, caught.details)
-    }
-
-    if (caught instanceof TypeError) {
-      throw new ScheduleApiError(
-        'Cannot reach scheduling API. Confirm backend is running and frontend is using the local proxy.',
-        503,
-      )
-    }
-
-    if (caught instanceof Error) {
-      throw new ScheduleApiError(caught.message, 500)
-    }
-
-    throw new ScheduleApiError('Scheduling request failed. Please retry in a moment.', 500)
+    throw toApiError(caught)
   }
 }
 
 export const useSchedule = () => {
   const queryClient = useQueryClient()
 
-  return useMutation<ScheduleRunResult, ScheduleApiError, ScheduleFormValues>({
+  return useMutation<ScheduleRunResult, ApiError, ScheduleFormValues>({
     mutationFn: async (values) => {
       const algorithms: OptimizationAlgorithm[] = values.compareStrategies
         ? ['naive', 'greedy', 'optimal', 'mip']

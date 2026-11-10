@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuthLayout, FormError, PasswordField } from '@/components/auth/AuthLayout'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/hooks/useAuth'
 import { ApiError } from '@/services/apiClient'
 
@@ -16,6 +17,7 @@ export function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const mismatch = confirmPassword.length > 0 && password !== confirmPassword
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -32,76 +34,42 @@ export function SignupPage() {
       await signup({ email, password })
       navigate('/', { replace: true })
     } catch (caught) {
-      if (caught instanceof ApiError) {
-        setError(caught.message)
-      } else {
-        setError('Unable to create account right now.')
-      }
+      setError(caught instanceof ApiError ? caught.message : 'Unable to create your account right now. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-8">
-      <Card className="w-full border-border/70 bg-card/90">
-        <CardHeader>
-          <CardTitle>Create your account</CardTitle>
-          <CardDescription>Start saving your charging preferences securely.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </div>
+    <AuthLayout title="Create your account" description="Save your vehicle and charging preferences in one place.">
+      <form className="space-y-5" onSubmit={onSubmit}>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" required autoFocus />
+        </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </div>
+        <PasswordField id="password" label="Password" value={password} onChange={setPassword} autoComplete="new-password" />
+        <PasswordField
+          id="confirmPassword"
+          label="Confirm password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          autoComplete="new-password"
+          invalid={mismatch}
+          hint={mismatch ? 'Passwords don’t match yet.' : undefined}
+        />
 
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                autoComplete="new-password"
-                required
-              />
-            </div>
+        <FormError message={error} />
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? <span className="inline-flex items-center gap-2"><Spinner className="h-4 w-4 text-primary-foreground" />Creating account…</span> : 'Create account'}
+        </Button>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating account...' : 'Create account'}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Already registered?{' '}
-              <Link to="/login" className="font-medium text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-primary hover:underline">Sign in</Link>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }
