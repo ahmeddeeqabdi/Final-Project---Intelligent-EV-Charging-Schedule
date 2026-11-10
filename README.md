@@ -9,16 +9,60 @@ A full-stack application that creates EV charging schedules from electricity pri
 - Four scheduling strategies: naive, greedy, dynamic programming, and mixed-integer programming
 - Live Danish market data for DK1 and DK2, with cached-data fallback
 - JWT authentication, saved user constraints, and role-protected admin tools
-- React and TypeScript dashboard with schedule and market-signal visualizations
+- Guided three-step planner with an hour-by-hour charging timeline, strategy comparison, and light/dark themes
+- Responsive React and TypeScript dashboard that works on phones as well as desktops
 - Unit, integration, and randomized algorithm tests
 
-## Product preview
+## Product tour
 
-![EV charging scheduler dashboard preview](./docs/product-preview.svg)
+![Walkthrough: building a charging plan, inspecting the timeline, and comparing strategies](./docs/media/demo.webp)
 
-The dashboard turns market signals and vehicle constraints into a concrete
-charging plan. Users can compare strategies, inspect earlier schedules, save
-vehicle profiles, and export a plan to CSV or calendar format.
+<sub>▶ [Watch the walkthrough as an MP4](./docs/media/demo.mp4) · Screenshots and recordings use sample market data.</sub>
+
+### Your charging plan at a glance
+
+After three short steps (vehicle, charging needs, preferences), the dashboard
+answers the questions a driver actually has: *when does charging start, what
+will it cost, and how much does waiting save compared with charging right
+away?* The **When your car charges** timeline shows electricity price for every
+hour until departure and highlights the hours the plan uses.
+
+![Charging plan dashboard in light mode](./docs/media/dashboard-light.webp)
+
+### Compare strategies, light or dark
+
+Every planning method runs side by side, and the recommendation follows the
+price/CO₂ balance you choose. Selecting a method updates the summary,
+timeline, and hourly breakdown. The whole interface has a dark theme.
+
+![Charging plan dashboard in dark mode](./docs/media/dashboard-dark.webp)
+
+### Built for phones
+
+The planner, results, and timeline adapt to small screens. Tapping a timeline
+bar shows that hour's price, CO₂ intensity, and charging power.
+
+![Planner, results, and charging timeline on a phone](./docs/media/mobile.webp)
+
+<details>
+<summary><strong>More screenshots</strong></summary>
+
+**Detailed price, CO₂, and power chart**
+
+![Detailed chart of charging power with relative price and CO2 intensity](./docs/media/chart.webp)
+
+**First visit: how the scheduler works**
+
+![Empty state explaining how the scheduler works](./docs/media/start.webp)
+
+**Sign in**
+
+![Sign-in page](./docs/media/sign-in.webp)
+
+</details>
+
+Users can also save vehicle profiles, store default preferences, revisit
+recent plans, and export a plan to CSV or a calendar event.
 
 ## Measured algorithm tradeoff
 
@@ -44,7 +88,7 @@ See the [benchmark methodology, results, and limitations](./docs/benchmark-repor
 .
 ├── backend/              Spring Boot API and backend tests
 ├── frontend/             React application
-├── docs/                 Architecture and design notes
+├── docs/                 Architecture notes, benchmark report, and README media
 ├── .github/workflows/    Continuous integration
 ├── compose.yaml          Complete local application stack
 └── .env.example          Environment variable template
