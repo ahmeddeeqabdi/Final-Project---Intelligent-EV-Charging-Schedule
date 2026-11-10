@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuthLayout, FormError, PasswordField } from '@/components/auth/AuthLayout'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/hooks/useAuth'
 import { ApiError } from '@/services/apiClient'
 
@@ -28,64 +29,33 @@ export function LoginPage() {
       await login({ email, password })
       navigate(from, { replace: true })
     } catch (caught) {
-      if (caught instanceof ApiError) {
-        setError(caught.message)
-      } else {
-        setError('Unable to sign in right now.')
-      }
+      setError(caught instanceof ApiError ? caught.message : 'Unable to sign in right now. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-8">
-      <Card className="w-full border-border/70 bg-card/90">
-        <CardHeader>
-          <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to access your charging scheduler.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                required
-              />
-            </div>
+    <AuthLayout title="Welcome back" description="Sign in to plan your next charge.">
+      <form className="space-y-5" onSubmit={onSubmit}>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" required autoFocus />
+        </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
+        <PasswordField id="password" label="Password" value={password} onChange={setPassword} autoComplete="current-password" />
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        <FormError message={error} />
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
-            </Button>
+        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? <span className="inline-flex items-center gap-2"><Spinner className="h-4 w-4 text-primary-foreground" />Signing in…</span> : 'Sign in'}
+        </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
-              No account yet?{' '}
-              <Link to="/signup" className="font-medium text-primary hover:underline">
-                Create one
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        <p className="text-center text-sm text-muted-foreground">
+          New here?{' '}
+          <Link to="/signup" className="font-semibold text-primary hover:underline">Create an account</Link>
+        </p>
+      </form>
+    </AuthLayout>
   )
 }

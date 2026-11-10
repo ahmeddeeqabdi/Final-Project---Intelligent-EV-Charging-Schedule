@@ -1,14 +1,8 @@
 import { Check, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { OptimizationAlgorithm, ScheduleComparison } from '@/types/api'
-
-const labels: Record<OptimizationAlgorithm, string> = {
-  naive: 'Charge immediately', greedy: 'Balanced and fast', optimal: 'Best overall balance', mip: 'Most precise',
-}
-const technicalLabels: Record<OptimizationAlgorithm, string> = {
-  naive: 'Naive baseline', greedy: 'Greedy heuristic', optimal: 'Dynamic programming', mip: 'Mixed-integer programming',
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatCo2, formatDkk, strategyInfo } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import type { OptimizationAlgorithm, ScheduleComparison, ScheduleResult } from '@/types/api'
 
 interface Props {
   comparisons: ScheduleComparison
@@ -17,52 +11,80 @@ interface Props {
   onSelect: (algorithm: OptimizationAlgorithm) => void
 }
 
+const order: OptimizationAlgorithm[] = ['optimal', 'mip', 'greedy', 'naive']
+
 export function StrategyComparison({ comparisons, active, costWeight, onSelect }: Props) {
-  const entries = (Object.entries(comparisons) as Array<[OptimizationAlgorithm, NonNullable<ScheduleComparison[OptimizationAlgorithm]>]>)
+  const entries = order
+    .filter((algorithm) => comparisons[algorithm])
+    .map((algorithm) => [algorithm, comparisons[algorithm]] as [OptimizationAlgorithm, ScheduleResult])
   if (entries.length < 2) return null
 
   const costs = entries.map(([, result]) => result.totalCost)
   const emissions = entries.map(([, result]) => result.totalCO2)
   const range = (values: number[]) => Math.max(...values) - Math.min(...values) || 1
   const costMin = Math.min(...costs)
+  const costMax = Math.max(...costs)
   const emissionMin = Math.min(...emissions)
-  const recommended = entries.reduce((best, current) => {
-    const score = ([, result]: typeof current) =>
-      costWeight * ((result.totalCost - costMin) / range(costs)) +
-      (1 - costWeight) * ((result.totalCO2 - emissionMin) / range(emissions))
-    return score(current) < score(best) ? current : best
-  })[0]
+  const score = ([, result]: [OptimizationAlgorithm, ScheduleResult]) =>
+    costWeight * ((result.totalCost - costMin) / range(costs)) +
+    (1 - costWeight) * ((result.totalCO2 - emissionMin) / range(emissions))
+  const recommended = entries.reduce((best, current) => (score(current) < score(best) ? current : best))[0]
+  const baseline = comparisons.naive
 
   return (
-    <Card>
+    <Card className="animate-rise">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Compare other plans</CardTitle>
-        <p className="text-sm text-muted-foreground">Select an alternative to update the results below. Hover or focus a plan to see its technical method.</p>
+        <CardTitle className="text-lg">Compare planning methods</CardTitle>
+        <CardDescription>Select a method to update the plan, timeline, and breakdown.</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {entries.map(([algorithm, result]) => (
-          <Button
-            key={algorithm}
-            type="button"
-            variant="secondary"
-            className={`h-auto min-h-28 justify-start p-3 text-left ${active === algorithm ? 'border-2 border-primary bg-primary/10' : ''}`}
-            title={`Technical method: ${technicalLabels[algorithm]}`}
-            onClick={() => onSelect(algorithm)}
-          >
-            <span className="w-full space-y-1">
-              <span className="flex items-center justify-between font-bold">
-                {labels[algorithm]}
-                {active === algorithm ? <Check className="h-4 w-4 text-primary" /> : null}
+      <CardContent className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-4" role="group" aria-label="Planning methods">
+        {entries.map(([algorithm, result]) => {
+          const isActive = active === algorithm
+          const delta = baseline && algorithm !== 'naive' ? baseline.totalCost - result.totalCost : null
+          return (
+            <button
+              key={algorithm}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => onSelect(algorithm)}
+              className={cn(
+                'relative flex min-h-[7.5rem] flex-col rounded-md border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background',
+                isActive ? 'border-primary bg-primary/10 shadow-sm' : 'border-border bg-background hover:border-foreground/30 hover:bg-secondary/60',
+              )}
+            >
+              <span className="flex items-start justify-between gap-2">
+                <span>
+                  <span className="block font-semibold text-foreground">{strategyInfo[algorithm].label}</span>
+                  <span className="block text-xs text-muted-foreground">{strategyInfo[algorithm].technical}</span>
+                </span>
+                {isActive ? (
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"><Check className="h-3.5 w-3.5" /></span>
+                ) : null}
               </span>
               {recommended === algorithm ? (
-                <span className="flex items-center gap-1 text-xs font-bold text-success"><Sparkles className="h-3 w-3" />Recommended</span>
+                <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Recommended</span>
+                </span>
               ) : null}
-              {active === algorithm ? <span className="block text-xs font-medium text-primary">Currently viewing</span> : null}
-              <span className="block text-xs text-muted-foreground">{result.totalCost.toFixed(2)} DKK</span>
-              <span className="block text-xs text-muted-foreground">{Math.round(result.totalCO2)} gCO2</span>
-            </span>
-          </Button>
-        ))}
+              <span className="mt-auto pt-3">
+                <span className="flex items-baseline justify-between gap-2 tabular-nums">
+                  <span className="font-display text-lg font-bold text-foreground">{formatDkk(result.totalCost)}</span>
+                  <span className="text-xs text-muted-foreground">{formatCo2(result.totalCO2)}</span>
+                </span>
+                <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                  <span
+                    className={cn('block h-full rounded-full', isActive ? 'bg-primary' : 'bg-foreground/40')}
+                    style={{ width: `${Math.max(8, (result.totalCost / (costMax || 1)) * 100)}%` }}
+                  />
+                </span>
+                <span className={cn('mt-1.5 block text-xs', delta != null && delta > 0.005 ? 'font-medium text-success' : 'text-muted-foreground')}>
+                  {algorithm === 'naive' ? 'Baseline: charge as soon as you plug in' : delta != null && delta > 0.005 ? `${formatDkk(delta)} cheaper than charging now` : 'Same cost as charging now'}
+                </span>
+              </span>
+            </button>
+          )
+        })}
       </CardContent>
     </Card>
   )
